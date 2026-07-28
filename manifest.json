@@ -1,0 +1,10 @@
+{
+  "id": "Momento",
+  "name": "Momento",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "A cozy local-first life logging and memory vault supporting text notes, photos, videos, voice recordings, attachments, timeline, calendar, media gallery, 3D roaming, and tag search.",
+  "author": "peyote",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
