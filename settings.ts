@@ -95,16 +95,18 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         // ---- Header ----
-        const headerEl = containerEl.createDiv();
-        headerEl.style.marginBottom = '24px';
-        headerEl.createEl('h2', { text: '拾光设置' });
-        headerEl.createEl('p', {
+        new Setting(containerEl)
+            .setName('拾光设置')
+            .setHeading();
+        containerEl.createEl('p', {
             text: '配置媒体存储位置和常用标签。',
             cls: 'setting-item-description'
         });
 
         // ---- Storage ----
-        containerEl.createEl('h3', { text: '📁 存储设置' });
+        new Setting(containerEl)
+            .setName('📁 存储设置')
+            .setHeading();
 
         new Setting(containerEl)
             .setName('媒体存储文件夹')
@@ -167,7 +169,9 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
                 }));
 
         // ---- Batch Import ----
-        containerEl.createEl('h3', { text: '📥 批量导入设置' });
+        new Setting(containerEl)
+            .setName('📥 批量导入设置')
+            .setHeading();
 
         new Setting(containerEl)
             .setName('默认时间模式')
@@ -204,7 +208,9 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
                 }));
 
         // ---- Speech To Text ----
-        containerEl.createEl('h3', { text: '语音转文字' });
+        new Setting(containerEl)
+            .setName('语音转文字')
+            .setHeading();
 
         new Setting(containerEl)
             .setName('语音转文字接口')
@@ -228,7 +234,9 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
                 }));
 
         // ---- Custom Tags ----
-        containerEl.createEl('h3', { text: '🏷️ 自定义标签' });
+        new Setting(containerEl)
+            .setName('🏷️ 自定义标签')
+            .setHeading();
         containerEl.createEl('p', {
             text: '编辑常用生活标签，每个标签一行。',
             cls: 'setting-item-description'
@@ -247,16 +255,17 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
             });
 
         // ---- Data Stats ----
-        containerEl.createEl('h3', { text: '📊 数据统计' });
-        const statsEl = containerEl.createDiv();
-        statsEl.style.padding = '12px';
-        statsEl.style.borderRadius = '8px';
-        statsEl.style.backgroundColor = 'var(--background-secondary)';
-        statsEl.style.fontSize = '13px';
-        statsEl.style.color = 'var(--text-muted)';
+        new Setting(containerEl)
+            .setName('📊 数据统计')
+            .setHeading();
+        const statsEl = containerEl.createDiv('life-settings-stats');
 
         const totalEntries = this.plugin.data.entries.length;
         const totalMedia = this.plugin.data.entries.reduce((sum, e) => sum + (e.images?.length || 0) + (e.videos?.length || 0) + (e.audios?.length || 0) + (e.files?.length || 0), 0);
-        statsEl.innerHTML = `共 <strong>${totalEntries}</strong> 条记录，<strong>${totalMedia}</strong> 个媒体/文件`;
+        statsEl.appendText('共 ');
+        statsEl.createEl('strong', { text: String(totalEntries) });
+        statsEl.appendText(' 条记录，');
+        statsEl.createEl('strong', { text: String(totalMedia) });
+        statsEl.appendText(' 个媒体/文件');
     }
 }

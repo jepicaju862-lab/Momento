@@ -11334,3 +11334,10 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
     padding:            3rem;
   }
 }
+.life-settings-stats {
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  font-size: 13px;
+  color: var(--text-muted);
+}

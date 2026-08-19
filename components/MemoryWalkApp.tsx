@@ -8,18 +8,26 @@ import ChildTimelinePlugin from '../main';
 import { TimelineEntry } from '../settings';
 import Galaxy3D, { GalaxyPhoto, GalaxyShape } from './Galaxy3D';
 import { CarouselMode } from './CarouselMode';
-import { MarkdownRenderer } from 'obsidian';
+import { App, Component, MarkdownRenderer } from 'obsidian';
 
 /* ─── Markdown Preview Component ─── */
-function MarkdownPreview({ content, sourcePath, plugin }: { content: string, sourcePath: string, plugin: ChildTimelinePlugin }) {
+function MarkdownPreview({ content, sourcePath, app }: { content: string, sourcePath: string, app: App }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '';
-      MarkdownRenderer.render(plugin.app, content, containerRef.current, sourcePath, plugin);
-    }
-  }, [content, sourcePath, plugin]);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const component = new Component();
+    component.load();
+    container.empty();
+    void MarkdownRenderer.render(app, content, container, sourcePath, component);
+
+    return () => {
+      component.unload();
+      container.empty();
+    };
+  }, [app, content, sourcePath]);
 
   return <div ref={containerRef} className="markdown-rendered text-sm leading-relaxed text-white/80" />;
 }
@@ -195,9 +203,9 @@ export function MemoryWalkApp({ plugin }: { plugin: ChildTimelinePlugin }) {
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      wrapperRef.current?.requestFullscreen().catch(err => console.log(err));
+      void wrapperRef.current?.requestFullscreen().catch(() => undefined);
     } else {
-      document.exitFullscreen();
+      void document.exitFullscreen();
     }
   };
 
@@ -580,7 +588,7 @@ export function MemoryWalkApp({ plugin }: { plugin: ChildTimelinePlugin }) {
                       <div className="memory-photo-section">
                         <div className="memory-photo-section-title">记录</div>
                         <div className="memory-photo-note">
-                          <MarkdownPreview content={selectedPhoto.note} sourcePath={selectedPhoto.file?.path || ""} plugin={plugin} />
+                          <MarkdownPreview content={selectedPhoto.note} sourcePath={selectedPhoto.file?.path || ""} app={plugin.app} />
                         </div>
                       </div>
                    )}

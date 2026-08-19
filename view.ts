@@ -1,5 +1,6 @@
 ﻿import { ItemView, WorkspaceLeaf, normalizePath, setIcon, Notice, MarkdownRenderer } from 'obsidian';
 import ChildTimelinePlugin from './main';
+import { Platform, setCssProps } from 'obsidian';
 import { TFile } from 'obsidian';
 import { ChildInfo, TimelineEntry } from './settings';
 import { AddPostModal } from './post-modal';
@@ -514,8 +515,10 @@ export class TimelineView extends ItemView {
         wave.appendChild(progress);
         for (let i = 0; i < 30; i++) {
             const bar = wave.createSpan('life-audio-wave-bar');
-            bar.style.height = `${6 + ((i * 7) % 20)}px`;
-            bar.style.setProperty('--wave-delay', `${(i % 9) * 70}ms`);
+            setCssProps(bar, {
+                height: `${6 + ((i * 7) % 20)}px`,
+                '--wave-delay': `${(i % 9) * 70}ms`
+            });
         }
         const timeEl = body.createSpan('life-audio-time');
         timeEl.setText('0:00');
@@ -555,7 +558,7 @@ export class TimelineView extends ItemView {
         const syncProgress = () => {
             const duration = audio.duration || 0;
             progress.value = duration ? String((audio.currentTime / duration) * 100) : '0';
-            card.style.setProperty('--audio-progress', `${duration ? (audio.currentTime / duration) * 100 : 0}%`);
+            setCssProps(card, { '--audio-progress': `${duration ? (audio.currentTime / duration) * 100 : 0}%` });
             timeEl.setText(`${fmt(audio.currentTime)}${duration ? ` / ${fmt(duration)}` : ''}`);
         };
 
@@ -589,7 +592,7 @@ export class TimelineView extends ItemView {
             playBtn.setAttr('title', '播放录音');
             playBtn.setAttr('aria-label', '播放录音');
             card.removeClass('is-playing');
-            card.style.setProperty('--audio-progress', '0%');
+            setCssProps(card, { '--audio-progress': '0%' });
         };
         audio.ontimeupdate = syncProgress;
         audio.onloadedmetadata = syncProgress;
@@ -704,7 +707,7 @@ export class TimelineView extends ItemView {
         container.empty();
         container.addClass('child-timeline-wrapper');
         container.toggleClass('is-selection-mode', this.selectionMode);
-        const touchLayout = window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+        const touchLayout = Platform.isMobileApp || window.matchMedia?.('(pointer: coarse)').matches;
         container.toggleClass('is-touch-layout', touchLayout);
 
         const activeChild = { name: '', dob: '', avatar: 'IN' };
@@ -728,10 +731,12 @@ export class TimelineView extends ItemView {
 
     renderMemoryWalkMode(container: HTMLElement) {
         const wrapper = container.createDiv('shiguang-memory-walk-wrapper flex-1');
-        wrapper.style.height = '100%';
-        wrapper.style.minHeight = '0';
-        wrapper.style.overflow = 'hidden';
-        wrapper.style.position = 'relative';
+        setCssProps(wrapper, {
+            height: '100%',
+            minHeight: '0',
+            overflow: 'hidden',
+            position: 'relative'
+        });
         
         this.reactRoot = createRoot(wrapper);
         this.reactRoot.render(React.createElement(MemoryWalkApp, { plugin: this.plugin }));
@@ -879,7 +884,7 @@ export class TimelineView extends ItemView {
         const fab = container.createDiv('timeline-fab');
         fab.setAttr('title', '新增拾光记录');
         fab.setAttr('aria-label', '新增拾光记录');
-        fab.innerHTML = `<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="fab-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+        setIcon(fab, 'plus');
         fab.onclick = () => { new AddPostModal(this.app, this.plugin, () => this.renderView()).open(); };
     }
 
@@ -896,7 +901,7 @@ export class TimelineView extends ItemView {
         
         this.sidebarEl = content.createDiv('timeline-sidebar');
         const savedWidth = this.plugin.data.settings.sidebarWidth || 260;
-        this.sidebarEl.style.width = `${savedWidth}px`;
+        setCssProps(this.sidebarEl, { width: `${savedWidth}px` });
 
         // Mobile Drawer Overlay
         const overlay = content.createDiv('timeline-drawer-overlay');
@@ -914,21 +919,21 @@ export class TimelineView extends ItemView {
                 const delta = startX - moveEvent.clientX;
                 const newWidth = startWidth + delta;
                 if (newWidth >= 150 && newWidth <= 600) {
-                    this.sidebarEl.style.width = `${newWidth}px`;
+                    setCssProps(this.sidebarEl, { width: `${newWidth}px` });
                 }
             };
 
             const onMouseUp = async () => {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.cursor = '';
-                this.plugin.data.settings.sidebarWidth = parseInt(this.sidebarEl.style.width);
+                setCssProps(document.body, { cursor: '' });
+                this.plugin.data.settings.sidebarWidth = this.sidebarEl.offsetWidth;
                 await this.plugin.savePluginData();
             };
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = 'col-resize';
+            setCssProps(document.body, { cursor: 'col-resize' });
         });
 
         if (this.allPosts.length === 0) {
@@ -981,12 +986,11 @@ export class TimelineView extends ItemView {
         
         // Row 1: Search Input (Full Width)
         const row1 = searchContainer.createDiv('timeline-search-row-1');
-        row1.style.display = 'flex';
-        row1.style.width = '100%';
+        setCssProps(row1, { display: 'flex', width: '100%' });
 
         // Search Input Box
         const inputWrapper = row1.createDiv('timeline-search-input-wrapper');
-        inputWrapper.style.width = '100%';
+        setCssProps(inputWrapper, { width: '100%' });
         inputWrapper.createSpan('timeline-search-icon').setText('🔍');
         
         const input = inputWrapper.createEl('input', {
@@ -1029,13 +1033,11 @@ export class TimelineView extends ItemView {
 
         // Row 2: Type Filter & Tags Dropdown
         const row2 = searchContainer.createDiv('timeline-search-row-2');
-        row2.style.display = 'flex';
-        row2.style.gap = '8px';
-        row2.style.width = '100%';
+        setCssProps(row2, { display: 'flex', gap: '8px', width: '100%' });
 
         // Filter Dropdown (Row 2 Left)
         const filterSelect = row2.createEl('select', { cls: 'timeline-search-filter-select' });
-        filterSelect.style.flex = '1';
+        setCssProps(filterSelect, { flex: '1' });
         const filters: { type: typeof TimelineView.prototype.searchFilter; label: string; icon: string }[] = [
             { type: 'all', label: '全部类型', icon: '✨' },
             { type: 'image', label: '只看图片', icon: '🖼️' },
@@ -1059,7 +1061,7 @@ export class TimelineView extends ItemView {
 
         // Tags Dropdown (Row 2 Right)
         const tagSelect = row2.createEl('select', { cls: 'timeline-search-filter-select' });
-        tagSelect.style.flex = '1';
+        setCssProps(tagSelect, { flex: '1' });
         
         const tagCounts: Record<string, number> = {};
         const availableTagsSet = new Set<string>(this.plugin.data.settings.customTags || []);
@@ -1109,8 +1111,7 @@ export class TimelineView extends ItemView {
         let renderedCount = 0;
 
         const sentinel = container.createDiv('timeline-sentinel');
-        sentinel.style.height = '20px'; // invisible trigger at the bottom
-        sentinel.style.width = '100%';
+        setCssProps(sentinel, { height: '20px', width: '100%' }); // invisible trigger at the bottom
 
         const renderBatch = () => {
             const batch = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
@@ -1173,7 +1174,7 @@ export class TimelineView extends ItemView {
                         el.setAttribute('data-entry-id', post.entry.id);
                         el.setAttribute('data-date', this.dateKey(post.date));
                         el.toggleClass('is-selected', this.selectedEntryIds.has(post.entry.id));
-                        el.style.animationDelay = `${Math.min(delay, 500)}ms`;
+                        setCssProps(el, { animationDelay: `${Math.min(delay, 500)}ms` });
                         delay += 50;
 
                         el.createDiv('timeline-post-line');
@@ -1328,12 +1329,13 @@ export class TimelineView extends ItemView {
             if (!el) return;
 
             this.scrollElementIntoTimeline(el, 'center');
-            el.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
-            el.style.boxShadow = '0 0 0 4px var(--ct-accent-glow), 0 18px 44px rgba(20, 184, 166, 0.18)';
-            el.style.transform = 'translateY(-2px)';
+            setCssProps(el, {
+                transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+                boxShadow: '0 0 0 4px var(--ct-accent-glow), 0 18px 44px rgba(20, 184, 166, 0.18)',
+                transform: 'translateY(-2px)'
+            });
             window.setTimeout(() => {
-                el.style.boxShadow = '';
-                el.style.transform = '';
+                setCssProps(el, { boxShadow: '', transform: '' });
             }, 1300);
 
             this.sidebarEl?.findAll('.sidebar-tree-month-item').forEach(nav => nav.removeClass('active'));
@@ -1382,10 +1384,12 @@ export class TimelineView extends ItemView {
                         this.scrollElementIntoTimeline(targetEl, label ? 'start' : 'center');
                     }
                     if (el) {
-                        el.style.transition = 'box-shadow 0.3s ease';
-                        el.style.boxShadow = '0 0 0 4px var(--ct-accent-glow)';
-                        setTimeout(() => {
-                            el.style.boxShadow = '';
+                        setCssProps(el, {
+                            transition: 'box-shadow 0.3s ease',
+                            boxShadow: '0 0 0 4px var(--ct-accent-glow)'
+                        });
+                        window.setTimeout(() => {
+                            setCssProps(el, { boxShadow: '' });
                         }, 1000);
                     }
 
@@ -1418,7 +1422,8 @@ export class TimelineView extends ItemView {
         // Like
         const likeBtn = rightActions.createDiv('post-action-btn post-like-btn');
         const likeCount = post.entry.likes || 0;
-        likeBtn.innerHTML = `<span class="post-action-icon">❤️</span><span class="post-action-label">${likeCount > 0 ? likeCount : ''}</span>`;
+        likeBtn.createSpan('post-action-icon').setText('❤️');
+        likeBtn.createSpan('post-action-label').setText(likeCount > 0 ? String(likeCount) : '');
         if (likeCount > 0) likeBtn.addClass('liked');
         likeBtn.onclick = (e) => {
             e.stopPropagation();
@@ -1665,11 +1670,11 @@ export class TimelineView extends ItemView {
         renderTags();
 
         const fileInput = box.createEl('input', { attr: { type: 'file', multiple: 'true' } });
-        fileInput.style.display = 'none';
+        setCssProps(fileInput, { display: 'none' });
         const imageInput = box.createEl('input', { attr: { type: 'file', accept: 'image/*', multiple: 'true' } });
-        imageInput.style.display = 'none';
+        setCssProps(imageInput, { display: 'none' });
         const cameraInput = box.createEl('input', { attr: { type: 'file', accept: 'image/*', capture: 'environment' } });
-        cameraInput.style.display = 'none';
+        setCssProps(cameraInput, { display: 'none' });
         fileInput.onchange = async () => {
             await addFiles(fileInput.files);
             fileInput.value = '';
@@ -1951,23 +1956,27 @@ export class TimelineView extends ItemView {
                     
                     const mChevron = realMonthHeader.createSpan('sidebar-tree-chevron');
                     mChevron.setText('▾');
-                    mChevron.style.marginRight = '6px';
-                    mChevron.style.fontSize = '10px';
-                    mChevron.style.color = 'var(--text-muted)';
-                    mChevron.style.transition = 'transform 0.2s ease';
+                    setCssProps(mChevron, {
+                        marginRight: '6px',
+                        fontSize: '10px',
+                        color: 'var(--text-muted)',
+                        transition: 'transform 0.2s ease'
+                    });
                     
                     const mText = realMonthHeader.createSpan('sidebar-tree-real-month-text');
                     mText.setText(`${curMonthKey + 1}月`);
                     
                     // Simple inline styling for the new month header
-                    realMonthHeader.style.fontSize = '14px';
-                    realMonthHeader.style.fontWeight = 'bold';
-                    realMonthHeader.style.color = 'var(--text-normal)';
-                    realMonthHeader.style.padding = '8px 0 4px 16px';
-                    realMonthHeader.style.marginTop = '4px';
-                    realMonthHeader.style.cursor = 'pointer';
-                    realMonthHeader.style.display = 'flex';
-                    realMonthHeader.style.alignItems = 'center';
+                    setCssProps(realMonthHeader, {
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: 'var(--text-normal)',
+                        padding: '8px 0 4px 16px',
+                        marginTop: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center'
+                    });
                     
                     // Use const so each onclick captures its own list element
                     const thisDaysList = monthsList.createDiv('sidebar-tree-months-list');
@@ -2018,7 +2027,7 @@ export class TimelineView extends ItemView {
         if (this.sidebarEl) {
             const statsEl = this.sidebarEl.querySelector('.sidebar-stats');
             if (statsEl) {
-                statsEl.innerHTML = `📝 ${filteredPosts.length} 条 · 媒体 ${totalMedia} 个 · 喜欢 ${totalLikes}`;
+                statsEl.setText(`📝 ${filteredPosts.length} 条 · 媒体 ${totalMedia} 个 · 喜欢 ${totalLikes}`);
             }
         }
     }
@@ -2269,8 +2278,7 @@ export class TimelineView extends ItemView {
             let renderedCount = 0;
             
             const sentinel = gc.createDiv('gallery-sentinel');
-            sentinel.style.height = '20px';
-            sentinel.style.width = '100%';
+            setCssProps(sentinel, { height: '20px', width: '100%' });
 
             const renderBatch = () => {
                 const batch = items.slice(renderedCount, renderedCount + BATCH_SIZE);
@@ -2328,7 +2336,11 @@ export class TimelineView extends ItemView {
                             const vid = wrapper.createEl('video', { attr: { preload: 'metadata' } });
                             vid.src = this.resolveMediaSrc(item.fileName);
                             const play = wrapper.createDiv('gallery-item-play'); play.setText('▶');
-                            wrapper.onclick = () => { vid.controls = true; vid.play(); play.style.display = 'none'; };
+                            wrapper.onclick = () => {
+                                vid.controls = true;
+                                void vid.play();
+                                setCssProps(play, { display: 'none' });
+                            };
                         } else if (item.type === 'audio') {
                             wrapper.addClass('gallery-audio-item');
                             this.renderAudioCard(wrapper, this.resolveMediaSrc(item.fileName), item.fileName.split('/').pop() || '录音', {
@@ -2339,15 +2351,19 @@ export class TimelineView extends ItemView {
                             wrapper.addClass('gallery-text-item');
                             const textContent = wrapper.createDiv('gallery-text-content');
                             textContent.setText(item.fileName); // fileName holds the content
-                            wrapper.style.padding = '12px';
-                            wrapper.style.backgroundColor = 'var(--background-secondary)';
-                            wrapper.style.borderRadius = '8px';
-                            wrapper.style.overflow = 'hidden';
-                            wrapper.style.display = 'flex';
-                            wrapper.style.flexDirection = 'column';
-                            textContent.style.whiteSpace = 'pre-wrap';
-                            textContent.style.fontSize = '13px';
-                            textContent.style.color = 'var(--text-normal)';
+                            setCssProps(wrapper, {
+                                padding: '12px',
+                                backgroundColor: 'var(--background-secondary)',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            });
+                            setCssProps(textContent, {
+                                whiteSpace: 'pre-wrap',
+                                fontSize: '13px',
+                                color: 'var(--text-normal)'
+                            });
                         } else {
                             const link = wrapper.createEl('a', { href: '#', text: item.fileName.split('/').pop() || item.fileName });
                             link.addClass('life-media-file');
@@ -2355,8 +2371,8 @@ export class TimelineView extends ItemView {
                                 e.preventDefault();
                                 const path = this.plugin.resolveMediaPath(item.fileName);
                                 const file = this.app.vault.getAbstractFileByPath(path);
-                                if (file) {
-                                    this.app.workspace.getLeaf('tab').openFile(file as any);
+                                if (file instanceof TFile) {
+                                    void this.app.workspace.getLeaf('tab').openFile(file);
                                 }
                             };
                         }
@@ -2370,7 +2386,7 @@ export class TimelineView extends ItemView {
                         }
 
                         const delBtn = wrapper.createDiv('gallery-item-delete-btn');
-                        delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                        setIcon(delBtn, 'trash-2');
                         delBtn.onclick = async (e) => {
                             e.stopPropagation();
                             if (confirm(item.type === 'text' ? '确定取消喜欢该记录？' : '确定删除该文件？')) {
@@ -2483,8 +2499,8 @@ export class TimelineView extends ItemView {
             updateCounter();
         };
 
-        const prevBtn = overlay.createDiv('timeline-lightbox-nav prev'); prevBtn.innerHTML = '&#10094;';
-        const nextBtn = overlay.createDiv('timeline-lightbox-nav next'); nextBtn.innerHTML = '&#10095;';
+        const prevBtn = overlay.createDiv('timeline-lightbox-nav prev'); prevBtn.setText('❮');
+        const nextBtn = overlay.createDiv('timeline-lightbox-nav next'); nextBtn.setText('❯');
 
         prevBtn.onclick = (e) => { e.stopPropagation(); showImage(currentIndex - 1); };
         nextBtn.onclick = (e) => { e.stopPropagation(); showImage(currentIndex + 1); };

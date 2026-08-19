@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
+import { setCssProps } from "obsidian";
 import { TimelineEntry } from "../settings";
 import ChildTimelinePlugin from "../main";
 
@@ -111,8 +112,8 @@ function PhotoSprite({ photo, pos, isHovered, onHover, onLeave, onClick }: any) 
             ref={spriteRef}
             position={pos}
             onClick={(e) => { e.stopPropagation(); onClick(photo); }}
-            onPointerEnter={(e) => { e.stopPropagation(); onHover(); document.body.style.cursor = 'pointer'; }}
-            onPointerLeave={(e) => { e.stopPropagation(); onLeave(); document.body.style.cursor = 'auto'; }}
+            onPointerEnter={(e) => { e.stopPropagation(); onHover(); setCssProps(document.body, { cursor: 'pointer' }); }}
+            onPointerLeave={(e) => { e.stopPropagation(); onLeave(); setCssProps(document.body, { cursor: 'auto' }); }}
         >
             <spriteMaterial map={texture} depthTest={false} transparent opacity={isHovered ? 1 : 0.8} />
         </sprite>
@@ -713,13 +714,13 @@ function Particles({ photos, activeMonth, galaxyShape, onPhotoClick }: Galaxy3DP
                     e.stopPropagation();
                     if (e.instanceId !== undefined && e.instanceId !== hoveredIdx) {
                         setHoveredIdx(e.instanceId);
-                        document.body.style.cursor = 'pointer';
+                        setCssProps(document.body, { cursor: 'pointer' });
                     }
                 }}
                 onPointerOut={(e) => {
                     e.stopPropagation();
                     setHoveredIdx(null);
-                    document.body.style.cursor = 'auto';
+                    setCssProps(document.body, { cursor: 'auto' });
                 }}
                 onClick={(e) => {
                     e.stopPropagation();

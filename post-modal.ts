@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice, setIcon } from 'obsidian';
+import { App, Modal, Setting, Notice, setIcon, setCssProps } from 'obsidian';
 import ChildTimelinePlugin from './main';
 import { TimelineEntry } from './settings';
 import { CameraCaptureModal, openImageSourceMenu, prefersNativeCameraPicker } from './media-capture';
@@ -148,9 +148,11 @@ export class AddPostModal extends Modal {
             .setDesc('选择已有或输入新标签');
         tagsSetting.settingEl.addClass('add-post-tag-setting');
 
-        tagsSetting.controlEl.style.flexDirection = 'column';
-        tagsSetting.controlEl.style.alignItems = 'flex-end';
-        tagsSetting.controlEl.style.width = '100%';
+        setCssProps(tagsSetting.controlEl, {
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            width: '100%'
+        });
 
         const selectedTagsContainer = tagsSetting.controlEl.createDiv('add-post-selected-tags');
         
@@ -219,8 +221,10 @@ export class AddPostModal extends Modal {
         };
         
         // Ensure the setting control element stacks them vertically
-        tagsSetting.controlEl.style.flexDirection = 'column';
-        tagsSetting.controlEl.style.alignItems = 'flex-start';
+        setCssProps(tagsSetting.controlEl, {
+            flexDirection: 'column',
+            alignItems: 'flex-start'
+        });
 
         // Content Text Area
         const textAreaLabel = contentEl.createDiv('add-post-content-label');
@@ -322,7 +326,7 @@ export class AddPostModal extends Modal {
                 multiple: 'true'
             }
         });
-        fileInput.style.display = 'none';
+        setCssProps(fileInput, { display: 'none' });
 
         const imageInput = mediaActions.createEl('input', {
             attr: {
@@ -331,7 +335,7 @@ export class AddPostModal extends Modal {
                 multiple: 'true'
             }
         });
-        imageInput.style.display = 'none';
+        setCssProps(imageInput, { display: 'none' });
 
         const cameraInput = mediaActions.createEl('input', {
             attr: {
@@ -340,7 +344,7 @@ export class AddPostModal extends Modal {
                 capture: 'environment'
             }
         });
-        cameraInput.style.display = 'none';
+        setCssProps(cameraInput, { display: 'none' });
 
         const handleFiles = async (files: FileList | File[] | null) => {
             if (files) {
@@ -525,8 +529,10 @@ export class AddPostModal extends Modal {
             const wave = body.createDiv('add-post-audio-wave');
             for (let i = 0; i < 18; i++) {
                 const bar = wave.createSpan('add-post-audio-bar');
-                bar.style.height = `${5 + ((i * 9) % 17)}px`;
-                bar.style.setProperty('--preview-wave-delay', `${(i % 8) * 65}ms`);
+                setCssProps(bar, {
+                    height: `${5 + ((i * 9) % 17)}px`,
+                    '--preview-wave-delay': `${(i % 8) * 65}ms`
+                });
             }
             const time = card.createSpan('add-post-audio-time');
             time.setText('0:00');

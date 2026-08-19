@@ -1,10 +1,7 @@
-import { App, Menu, Modal, Notice, setIcon } from 'obsidian';
+import { App, Menu, Modal, Notice, Platform, setIcon } from 'obsidian';
 
 export function prefersNativeCameraPicker(): boolean {
-    const ua = navigator.userAgent || '';
-    const platform = navigator.platform || '';
-    const isTouchMac = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-    return /Android|iPhone|iPad|iPod/i.test(ua) || isTouchMac;
+    return Platform.isMobileApp;
 }
 
 export function openImageSourceMenu(
