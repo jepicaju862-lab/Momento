@@ -1,3 +1,14 @@
+# Momento (拾光) v1.0.8
+
+This hotfix restores record creation on Obsidian 1.13.x.
+
+- Fixed the add-record modal stopping after the date field with `setCssProps is not a function`.
+- Switched dynamic styling to Obsidian's runtime-compatible HTMLElement helpers.
+- Verified complete record creation and cleanup on Obsidian 1.13.7.
+- Verified timeline, calendar, gallery, and memory-walk views on desktop and mobile emulation.
+
+---
+
 # Momento (拾光) v1.0.7
 
 This release resolves all blocking issues reported by Obsidian's automated review for v1.0.6.

@@ -1,6 +1,6 @@
 ﻿import { ItemView, WorkspaceLeaf, normalizePath, setIcon, Notice, MarkdownRenderer } from 'obsidian';
 import ChildTimelinePlugin from './main';
-import { Platform, setCssProps } from 'obsidian';
+import { Platform } from 'obsidian';
 import { TFile } from 'obsidian';
 import { ChildInfo, TimelineEntry } from './settings';
 import { AddPostModal } from './post-modal';
@@ -515,10 +515,10 @@ export class TimelineView extends ItemView {
         wave.appendChild(progress);
         for (let i = 0; i < 30; i++) {
             const bar = wave.createSpan('life-audio-wave-bar');
-            setCssProps(bar, {
+            bar.setCssStyles({
                 height: `${6 + ((i * 7) % 20)}px`,
-                '--wave-delay': `${(i % 9) * 70}ms`
             });
+            bar.setCssProps({ '--wave-delay': `${(i % 9) * 70}ms` });
         }
         const timeEl = body.createSpan('life-audio-time');
         timeEl.setText('0:00');
@@ -558,7 +558,7 @@ export class TimelineView extends ItemView {
         const syncProgress = () => {
             const duration = audio.duration || 0;
             progress.value = duration ? String((audio.currentTime / duration) * 100) : '0';
-            setCssProps(card, { '--audio-progress': `${duration ? (audio.currentTime / duration) * 100 : 0}%` });
+            card.setCssProps({ '--audio-progress': `${duration ? (audio.currentTime / duration) * 100 : 0}%` });
             timeEl.setText(`${fmt(audio.currentTime)}${duration ? ` / ${fmt(duration)}` : ''}`);
         };
 
@@ -592,7 +592,7 @@ export class TimelineView extends ItemView {
             playBtn.setAttr('title', '播放录音');
             playBtn.setAttr('aria-label', '播放录音');
             card.removeClass('is-playing');
-            setCssProps(card, { '--audio-progress': '0%' });
+            card.setCssProps({ '--audio-progress': '0%' });
         };
         audio.ontimeupdate = syncProgress;
         audio.onloadedmetadata = syncProgress;
@@ -731,7 +731,7 @@ export class TimelineView extends ItemView {
 
     renderMemoryWalkMode(container: HTMLElement) {
         const wrapper = container.createDiv('shiguang-memory-walk-wrapper flex-1');
-        setCssProps(wrapper, {
+        wrapper.setCssStyles({
             height: '100%',
             minHeight: '0',
             overflow: 'hidden',
@@ -901,7 +901,7 @@ export class TimelineView extends ItemView {
         
         this.sidebarEl = content.createDiv('timeline-sidebar');
         const savedWidth = this.plugin.data.settings.sidebarWidth || 260;
-        setCssProps(this.sidebarEl, { width: `${savedWidth}px` });
+        this.sidebarEl.setCssStyles({ width: `${savedWidth}px` });
 
         // Mobile Drawer Overlay
         const overlay = content.createDiv('timeline-drawer-overlay');
@@ -919,21 +919,21 @@ export class TimelineView extends ItemView {
                 const delta = startX - moveEvent.clientX;
                 const newWidth = startWidth + delta;
                 if (newWidth >= 150 && newWidth <= 600) {
-                    setCssProps(this.sidebarEl, { width: `${newWidth}px` });
+                    this.sidebarEl.setCssStyles({ width: `${newWidth}px` });
                 }
             };
 
             const onMouseUp = async () => {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
-                setCssProps(document.body, { cursor: '' });
+                document.body.setCssStyles({ cursor: '' });
                 this.plugin.data.settings.sidebarWidth = this.sidebarEl.offsetWidth;
                 await this.plugin.savePluginData();
             };
 
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
-            setCssProps(document.body, { cursor: 'col-resize' });
+            document.body.setCssStyles({ cursor: 'col-resize' });
         });
 
         if (this.allPosts.length === 0) {
@@ -986,11 +986,11 @@ export class TimelineView extends ItemView {
         
         // Row 1: Search Input (Full Width)
         const row1 = searchContainer.createDiv('timeline-search-row-1');
-        setCssProps(row1, { display: 'flex', width: '100%' });
+        row1.setCssStyles({ display: 'flex', width: '100%' });
 
         // Search Input Box
         const inputWrapper = row1.createDiv('timeline-search-input-wrapper');
-        setCssProps(inputWrapper, { width: '100%' });
+        inputWrapper.setCssStyles({ width: '100%' });
         inputWrapper.createSpan('timeline-search-icon').setText('🔍');
         
         const input = inputWrapper.createEl('input', {
@@ -1033,11 +1033,11 @@ export class TimelineView extends ItemView {
 
         // Row 2: Type Filter & Tags Dropdown
         const row2 = searchContainer.createDiv('timeline-search-row-2');
-        setCssProps(row2, { display: 'flex', gap: '8px', width: '100%' });
+        row2.setCssStyles({ display: 'flex', gap: '8px', width: '100%' });
 
         // Filter Dropdown (Row 2 Left)
         const filterSelect = row2.createEl('select', { cls: 'timeline-search-filter-select' });
-        setCssProps(filterSelect, { flex: '1' });
+        filterSelect.setCssStyles({ flex: '1' });
         const filters: { type: typeof TimelineView.prototype.searchFilter; label: string; icon: string }[] = [
             { type: 'all', label: '全部类型', icon: '✨' },
             { type: 'image', label: '只看图片', icon: '🖼️' },
@@ -1061,7 +1061,7 @@ export class TimelineView extends ItemView {
 
         // Tags Dropdown (Row 2 Right)
         const tagSelect = row2.createEl('select', { cls: 'timeline-search-filter-select' });
-        setCssProps(tagSelect, { flex: '1' });
+        tagSelect.setCssStyles({ flex: '1' });
         
         const tagCounts: Record<string, number> = {};
         const availableTagsSet = new Set<string>(this.plugin.data.settings.customTags || []);
@@ -1111,7 +1111,7 @@ export class TimelineView extends ItemView {
         let renderedCount = 0;
 
         const sentinel = container.createDiv('timeline-sentinel');
-        setCssProps(sentinel, { height: '20px', width: '100%' }); // invisible trigger at the bottom
+        sentinel.setCssStyles({ height: '20px', width: '100%' }); // invisible trigger at the bottom
 
         const renderBatch = () => {
             const batch = filtered.slice(renderedCount, renderedCount + BATCH_SIZE);
@@ -1174,7 +1174,7 @@ export class TimelineView extends ItemView {
                         el.setAttribute('data-entry-id', post.entry.id);
                         el.setAttribute('data-date', this.dateKey(post.date));
                         el.toggleClass('is-selected', this.selectedEntryIds.has(post.entry.id));
-                        setCssProps(el, { animationDelay: `${Math.min(delay, 500)}ms` });
+                        el.setCssStyles({ animationDelay: `${Math.min(delay, 500)}ms` });
                         delay += 50;
 
                         el.createDiv('timeline-post-line');
@@ -1329,13 +1329,13 @@ export class TimelineView extends ItemView {
             if (!el) return;
 
             this.scrollElementIntoTimeline(el, 'center');
-            setCssProps(el, {
+            el.setCssStyles({
                 transition: 'box-shadow 0.3s ease, transform 0.3s ease',
                 boxShadow: '0 0 0 4px var(--ct-accent-glow), 0 18px 44px rgba(20, 184, 166, 0.18)',
                 transform: 'translateY(-2px)'
             });
             window.setTimeout(() => {
-                setCssProps(el, { boxShadow: '', transform: '' });
+                el.setCssStyles({ boxShadow: '', transform: '' });
             }, 1300);
 
             this.sidebarEl?.findAll('.sidebar-tree-month-item').forEach(nav => nav.removeClass('active'));
@@ -1384,12 +1384,12 @@ export class TimelineView extends ItemView {
                         this.scrollElementIntoTimeline(targetEl, label ? 'start' : 'center');
                     }
                     if (el) {
-                        setCssProps(el, {
+                        el.setCssStyles({
                             transition: 'box-shadow 0.3s ease',
                             boxShadow: '0 0 0 4px var(--ct-accent-glow)'
                         });
                         window.setTimeout(() => {
-                            setCssProps(el, { boxShadow: '' });
+                            el.setCssStyles({ boxShadow: '' });
                         }, 1000);
                     }
 
@@ -1670,11 +1670,11 @@ export class TimelineView extends ItemView {
         renderTags();
 
         const fileInput = box.createEl('input', { attr: { type: 'file', multiple: 'true' } });
-        setCssProps(fileInput, { display: 'none' });
+        fileInput.setCssStyles({ display: 'none' });
         const imageInput = box.createEl('input', { attr: { type: 'file', accept: 'image/*', multiple: 'true' } });
-        setCssProps(imageInput, { display: 'none' });
+        imageInput.setCssStyles({ display: 'none' });
         const cameraInput = box.createEl('input', { attr: { type: 'file', accept: 'image/*', capture: 'environment' } });
-        setCssProps(cameraInput, { display: 'none' });
+        cameraInput.setCssStyles({ display: 'none' });
         fileInput.onchange = async () => {
             await addFiles(fileInput.files);
             fileInput.value = '';
@@ -1956,7 +1956,7 @@ export class TimelineView extends ItemView {
                     
                     const mChevron = realMonthHeader.createSpan('sidebar-tree-chevron');
                     mChevron.setText('▾');
-                    setCssProps(mChevron, {
+                    mChevron.setCssStyles({
                         marginRight: '6px',
                         fontSize: '10px',
                         color: 'var(--text-muted)',
@@ -1967,7 +1967,7 @@ export class TimelineView extends ItemView {
                     mText.setText(`${curMonthKey + 1}月`);
                     
                     // Simple inline styling for the new month header
-                    setCssProps(realMonthHeader, {
+                    realMonthHeader.setCssStyles({
                         fontSize: '14px',
                         fontWeight: 'bold',
                         color: 'var(--text-normal)',
@@ -2278,7 +2278,7 @@ export class TimelineView extends ItemView {
             let renderedCount = 0;
             
             const sentinel = gc.createDiv('gallery-sentinel');
-            setCssProps(sentinel, { height: '20px', width: '100%' });
+            sentinel.setCssStyles({ height: '20px', width: '100%' });
 
             const renderBatch = () => {
                 const batch = items.slice(renderedCount, renderedCount + BATCH_SIZE);
@@ -2339,7 +2339,7 @@ export class TimelineView extends ItemView {
                             wrapper.onclick = () => {
                                 vid.controls = true;
                                 void vid.play();
-                                setCssProps(play, { display: 'none' });
+                                play.setCssStyles({ display: 'none' });
                             };
                         } else if (item.type === 'audio') {
                             wrapper.addClass('gallery-audio-item');
@@ -2351,7 +2351,7 @@ export class TimelineView extends ItemView {
                             wrapper.addClass('gallery-text-item');
                             const textContent = wrapper.createDiv('gallery-text-content');
                             textContent.setText(item.fileName); // fileName holds the content
-                            setCssProps(wrapper, {
+                            wrapper.setCssStyles({
                                 padding: '12px',
                                 backgroundColor: 'var(--background-secondary)',
                                 borderRadius: '8px',
@@ -2359,7 +2359,7 @@ export class TimelineView extends ItemView {
                                 display: 'flex',
                                 flexDirection: 'column'
                             });
-                            setCssProps(textContent, {
+                            textContent.setCssStyles({
                                 whiteSpace: 'pre-wrap',
                                 fontSize: '13px',
                                 color: 'var(--text-normal)'

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-life-records",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Life records for Obsidian with timeline, calendar, gallery, recordings, files, and tag search",
   "main": "main.js",
   "scripts": {
