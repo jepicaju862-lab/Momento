@@ -94,7 +94,14 @@ export default class ChildTimelinePlugin extends Plugin {
         this.registerEvent(workspace.on('child-timeline-data-changed', changed));
         this.registerEvent(workspace.on(WECHAT_UPDATED_EVENT, changed));
         this.api = createMomentoApi(this);
-        registerHomeWidgets(this);
+        const homeWidgets = registerHomeWidgets(this);
+        this.addCommand({
+            id: 'pin-home-widgets',
+            name: '在首页添加拾光组件',
+            callback: async () => {
+                if (!(await homeWidgets.pinAll())) new Notice('请先安装并启用首页插件');
+            }
+        });
         workspace.trigger(MOMENTO_READY, this.api);
         this.app.workspace.onLayoutReady(() => void this.wechat.refresh());
     }

@@ -112,23 +112,24 @@ export class WechatBridge {
         return this.pending().find(g => g.key === keyOrMessageKey || g.keys.includes(keyOrMessageKey)) ?? null;
     }
 
-    /** Keeps one group, or several merged into one entry. Returns the entry id. */
-    async keep(groups: WechatGroup[]): Promise<string | null> {
+    /** Keeps one group, or several merged into one entry; `content` replaces the text (a caption written before keeping). */
+    async keep(groups: WechatGroup[], content?: string): Promise<string | null> {
         if (!groups.length) return null;
         const group = groups.length === 1 ? groups[0] : mergeGroups(groups);
         const { id } = await this.plugin.captureEntry({
             ...group.draft,
+            ...(content !== undefined ? { content } : {}),
             tags: [WECHAT_TAG],
         }, { plugin: WECHAT_SOURCE, keys: group.keys, notePath: group.notePath });
         this.plugin.app.workspace.trigger(WECHAT_UPDATED_EVENT);
         return id;
     }
 
-    /** Keeps each group as its own entry. */
-    async keepEach(groups: WechatGroup[]): Promise<string[]> {
+    /** Keeps each group as its own entry; `contentFor` may supply a caption per group. */
+    async keepEach(groups: WechatGroup[], contentFor?: (group: WechatGroup) => string | undefined): Promise<string[]> {
         const ids: string[] = [];
         for (const group of groups) {
-            const id = await this.keep([group]);
+            const id = await this.keep([group], contentFor?.(group));
             if (id) ids.push(id);
         }
         return ids;
@@ -149,17 +150,22 @@ export class WechatBridge {
         this.plugin.app.workspace.trigger(WECHAT_UPDATED_EVENT);
     }
 
-    /** Undo for a keep: removes the entries (WeChat2Ob's files stay) and marks them dismissed. */
-    async unkeep(entryIds: string[]): Promise<void> {
+    /**
+     * Undo for a keep: removes the entries (WeChat2Ob's files stay). The groups become candidates
+     * again, unless `dismiss` (used for auto-keep, which would otherwise keep them on the next sync).
+     */
+    async unkeep(entryIds: string[], options: { dismiss?: boolean } = {}): Promise<void> {
         const keys: string[] = [];
         for (const id of entryIds) {
             const entry = this.plugin.data.entries.find(e => e.id === id);
             if (entry?.source?.plugin === WECHAT_SOURCE) keys.push(...entry.source.keys);
             await this.plugin.deleteEntry(id);
         }
-        const now = Date.now();
-        for (const key of keys) this.plugin.data.wechatDismissed[key] = now;
-        await this.plugin.savePluginData();
+        if (options.dismiss) {
+            const now = Date.now();
+            for (const key of keys) this.plugin.data.wechatDismissed[key] = now;
+            await this.plugin.savePluginData();
+        }
         this.plugin.app.workspace.trigger(WECHAT_UPDATED_EVENT);
     }
 
@@ -171,11 +177,11 @@ export class WechatBridge {
         const groups = this.candidates();
         if (!groups.length) return;
         const ids = await this.keepEach(groups);
-        if (ids.length) this.notifyKept(ids);
+        if (ids.length) this.notifyKept(ids, `已自动存为拾光：${ids.length} 条`, { dismissOnUndo: true });
     }
 
     /** “Kept N memories · View · Undo”. */
-    notifyKept(ids: string[], label = `已存为拾光：${ids.length} 条`): void {
+    notifyKept(ids: string[], label = `已存为拾光：${ids.length} 条`, options: { dismissOnUndo?: boolean } = {}): void {
         const fragment = createFragment();
         fragment.createSpan({ text: label });
         const actions = fragment.createDiv({ cls: 'momento-notice-actions' });
@@ -183,7 +189,7 @@ export class WechatBridge {
         const undo = actions.createEl('button', { text: '撤销' });
         const notice = new Notice(fragment, 8000);
         view.onclick = () => { notice.hide(); void this.plugin.openEntry(ids[0]); };
-        undo.onclick = () => { notice.hide(); void this.unkeep(ids); };
+        undo.onclick = () => { notice.hide(); void this.unkeep(ids, { dismiss: options.dismissOnUndo }); };
     }
 
     /** “Ignored · Undo”. */

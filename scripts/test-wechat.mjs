@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 
 mkdirSync('.test-out', { recursive: true });
 const outputs = [];
-for (const name of ['wechat-candidates', 'wechat-bridge']) {
+for (const name of ['wechat-candidates', 'wechat-bridge', 'memories']) {
 	const outfile = `.test-out/${name}.test.cjs`;
 	await build({
 		entryPoints: [`scripts/${name}.test.ts`],

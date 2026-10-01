@@ -94,7 +94,16 @@ test('ignore and undo, keep and undo', async () => {
     const id = await plugin.wechat.keep([group]);
     await plugin.wechat.unkeep([id!]);
     assert.equal(data.entries.length, 0, 'undo removes the entry');
-    assert.equal(plugin.wechat.candidates().length, 0, 'and does not offer it again');
+    assert.equal(plugin.wechat.candidates().length, 1, 'a manual keep undone is offered again');
+    const again = await plugin.wechat.keep([group]);
+    await plugin.wechat.unkeep([again!], { dismiss: true });
+    assert.equal(plugin.wechat.candidates().length, 0, 'undoing an auto-keep does not offer it again');
+
+    const captioned = setup(burst());
+    await captioned.plugin.wechat.refresh();
+    const [g] = captioned.plugin.wechat.candidates();
+    await captioned.plugin.wechat.keepEach([g], () => '自己写的一句话');
+    assert.equal(captioned.data.entries[0].content, '自己写的一句话', 'caption typed before keeping is saved');
 });
 
 test('selected groups merge into one entry', async () => {
