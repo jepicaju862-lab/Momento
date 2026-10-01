@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { longDate, mediaSummary, memoriesAround, pickRandom, plainText, yearsAgoLabel } from '../memories';
+import { dayLabel, longDate, mediaSummary, memoriesAround, pickRandom, plainText, recentEntries, yearsAgoLabel } from '../memories';
 import type { TimelineEntry } from '../settings';
 
 const entry = (date: string, content = date, createdAt = 0): TimelineEntry => ({
@@ -38,4 +38,15 @@ test('random pick avoids the current item when it can', () => {
     assert.equal(pickRandom(items, 'a', () => 0)?.id, 'b');
     assert.equal(pickRandom([{ id: 'a' }], 'a', () => 0)?.id, 'a');
     assert.equal(pickRandom([], undefined), undefined);
+});
+
+test('day labels and recent entries for the homepage timeline', () => {
+    const today = new Date(2026, 9, 1);
+    assert.equal(dayLabel('2026-10-01', today), '今天');
+    assert.equal(dayLabel('2026-09-30', today), '昨天');
+    assert.equal(dayLabel('2026-09-29', today), '前天');
+    assert.equal(dayLabel('2026-09-27', today), '9月27日 周日');
+    assert.equal(dayLabel('2025-09-27', today), '2025年9月27日 周六');
+    const list = recentEntries([entry('2026-09-24'), entry('2026-09-25', 'a', 1), entry('2026-10-01', 'b', 5), entry('2026-10-01', 'c', 9), entry('2026-10-02')], 7, today);
+    assert.deepEqual(list.map(e => e.content), ['2026-10-02', 'c', 'b', 'a'], 'last 7 days incl. today, newest first');
 });

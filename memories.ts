@@ -71,3 +71,25 @@ export function pickRandom<T extends { id: string }>(items: T[], exclude?: strin
     const choices = items.length > 1 ? items.filter(item => item.id !== exclude) : items;
     return choices[Math.floor(random() * choices.length)];
 }
+
+/** "今天" / "昨天" / "前天" / "9月28日 周日" (adds the year when it is not this year). */
+export function dayLabel(date: string, today = new Date()): string {
+    const d = parseDate(date);
+    if (!d) return date;
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const days = Math.round((start.getTime() - d.getTime()) / DAY);
+    if (days === 0) return '今天';
+    if (days === 1) return '昨天';
+    if (days === 2) return '前天';
+    const year = d.getFullYear() === today.getFullYear() ? '' : `${d.getFullYear()}年`;
+    return `${year}${d.getMonth() + 1}月${d.getDate()}日 周${'日一二三四五六'[d.getDay()]}`;
+}
+
+/** Entries dated within the last `days` days (today included), newest first. */
+export function recentEntries(entries: TimelineEntry[], days: number, today = new Date()): TimelineEntry[] {
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - Math.max(0, days - 1));
+    const from = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+    return entries
+        .filter(e => parseDate(e.date) && e.date >= from)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+}
