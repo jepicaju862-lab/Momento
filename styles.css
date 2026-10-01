@@ -11946,7 +11946,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 10px 0 4px calc(var(--tl-x) * 2 + 4px);
+  padding: 8px 0 2px calc(var(--tl-x) * 2 + 4px);
   background: linear-gradient(var(--background-primary) 75%, transparent);
   font-size: var(--font-ui-smaller);
   font-weight: 600;
@@ -11958,7 +11958,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   position: relative;
   display: flex;
   gap: 4px;
-  padding: 6px 6px 8px 0;
+  padding: 6px 8px 7px 0;
   border-radius: 10px;
   cursor: pointer;
   outline: none;
@@ -12030,12 +12030,26 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 }
 
 .momento-hp-tl-body {
-  display: flex;
+  /* Wide cards: text on the left, photos on the right (narrow cards stack, see @container below). */
+  display: grid;
   flex: 1;
-  flex-direction: column;
-  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head  media"
+    "text  media"
+    "voice media"
+    "foot  media";
+  align-content: start;
+  column-gap: 14px;
   min-width: 0;
 }
+
+.momento-hp-tl-head { grid-area: head; }
+.momento-hp-tl-body > .momento-hp-tl-text,
+.momento-hp-tl-caption { grid-area: text; margin-top: 2px; }
+.momento-hp-tl-voice { grid-area: voice; justify-self: start; box-sizing: border-box; min-width: 0; margin-top: 6px; }
+.momento-hp-tl-media { grid-area: media; align-self: center; }
+.momento-hp-tl-foot { grid-area: foot; margin-top: 4px; }
 
 .momento-hp-tl-head {
   display: flex;
@@ -12110,7 +12124,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 
 .momento-hp-tl-media {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
 }
 
@@ -12166,6 +12180,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-tl-voice-icon svg { width: 11px; height: 11px; }
 
 .momento-hp-tl-voice-text {
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -12174,14 +12189,13 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-tl-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 20px;
+  gap: 8px;
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
 }
 
 .momento-hp-tl-tag { color: color-mix(in srgb, var(--mhp-accent) 70%, var(--text-muted)); }
-.momento-hp-tl-meta { color: var(--text-faint, var(--text-muted)); }
+.momento-hp-tl-likes { color: color-mix(in srgb, #e11d48 75%, var(--text-muted)); }
 
 /* Quiet actions: text links that appear on hover / focus (always on touch) */
 .momento-hp-tl-actions {
@@ -12338,6 +12352,14 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 }
 
 /* ---- Card sizes (Home Pages cards are size containers) ---- */
+@container (max-width: 460px) {
+  .momento-hp-tl-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "text" "voice" "media" "foot";
+  }
+  .momento-hp-tl-media { align-self: start; margin-top: 6px; flex-wrap: wrap; }
+}
+
 @container (max-width: 380px) {
   .momento-hp-tl-thumb { width: 46px; height: 46px; }
   .momento-hp-composer-hint { display: none; }

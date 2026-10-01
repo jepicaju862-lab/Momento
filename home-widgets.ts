@@ -16,6 +16,8 @@ interface HomeApi {
 }
 interface HomeContext<C> {
     app: App;
+    /** Home Pages itself; used to see what else is on the current page. */
+    plugin?: { getActivePage?(): { widgets: Array<{ kind: string; config?: Record<string, unknown> }> } };
     widget: { id: string };
     config: C;
     setSubtitle(text: string): void;
@@ -195,22 +197,25 @@ function renderTimeline(plugin: ChildTimelinePlugin, parent: HTMLElement, items:
             const { entry } = item;
             const until = fresh.get(entry.id) ?? 0;
             if (until > now) { row.addClass('is-fresh'); nextExpiry = Math.min(nextExpiry, until); } else fresh.delete(entry.id);
-            if (entry.source?.plugin === WECHAT_SOURCE) head.createSpan({ cls: 'momento-hp-tl-source', text: '微信' });
+            const fromWechat = entry.source?.plugin === WECHAT_SOURCE;
+            if (fromWechat) head.createSpan({ cls: 'momento-hp-tl-source', text: '微信' });
+            const actions = head.createDiv('momento-hp-tl-actions');
             const text = plainText(entry, 200);
             if (text) body.createDiv({ cls: 'momento-hp-tl-text', text });
             renderMedia(plugin, body, { images: entry.images || [], videos: entry.videos || [], audios: entry.audios || [] }, text ? undefined : Object.values(entry.audioTranscripts || {})[0]);
-            const foot = body.createDiv('momento-hp-tl-foot');
             // The 微信 source chip already says where it came from; skip the matching tag.
-            const fromWechat = entry.source?.plugin === WECHAT_SOURCE;
-            for (const tag of (entry.tags || []).filter(t => !(fromWechat && t === '微信')).slice(0, 3)) foot.createSpan({ cls: 'momento-hp-tl-tag', text: `#${tag}` });
-            const actions = foot.createDiv('momento-hp-tl-actions');
+            const tags = (entry.tags || []).filter(t => !(fromWechat && t === '微信')).slice(0, 3);
+            if (tags.length || entry.likes) {
+                const foot = body.createDiv('momento-hp-tl-foot');
+                for (const tag of tags) foot.createSpan({ cls: 'momento-hp-tl-tag', text: `#${tag}` });
+                if (entry.likes) foot.createSpan({ cls: 'momento-hp-tl-likes', text: `♥ ${entry.likes}` });
+            }
             if (row.hasClass('is-fresh')) {
                 const undo = actions.createEl('button', { cls: 'momento-hp-tl-act is-undo', text: '撤销', attr: { type: 'button' } });
                 undo.onclick = (event) => { event.stopPropagation(); undo.disabled = true; void on.undoFresh(entry); };
             }
             const like = actions.createEl('button', { cls: `momento-hp-tl-act is-like${entry.likes ? ' is-liked' : ''}`, attr: { type: 'button', 'aria-label': '喜欢', title: '喜欢' } });
             setIcon(like.createSpan(), 'heart');
-            if (entry.likes) like.createSpan({ text: String(entry.likes) });
             like.onclick = (event) => { event.stopPropagation(); like.addClass('is-pop'); void plugin.toggleLike(entry.id); };
             row.setAttribute('aria-label', `${dayLabel(entry.date)} ${hm(item.time)} ${text || mediaSummary(entry)}`);
             row.onclick = () => void plugin.openEntry(entry.id);
@@ -219,6 +224,7 @@ function renderTimeline(plugin: ChildTimelinePlugin, parent: HTMLElement, items:
             const { group } = item;
             row.addClass('is-candidate');
             head.createSpan({ cls: 'momento-hp-tl-source is-pending', text: '微信 · 待收' });
+            const actions = head.createDiv('momento-hp-tl-actions');
             const holder = body.createDiv({ cls: 'momento-hp-tl-caption', attr: { title: '点击写一句话，收下时一起保存' } });
             const caption = captions.get(group.key) ?? group.draft.content;
             const transcript = Object.values(group.draft.audioTranscripts)[0];
@@ -226,9 +232,6 @@ function renderTimeline(plugin: ChildTimelinePlugin, parent: HTMLElement, items:
             if (captions.has(group.key)) holder.createSpan({ cls: 'momento-hp-edited', text: '已编辑' });
             holder.onclick = (event) => { event.stopPropagation(); on.editCaption(holder, group); };
             renderMedia(plugin, body, group.draft, transcript);
-            const foot = body.createDiv('momento-hp-tl-foot');
-            foot.createSpan({ cls: 'momento-hp-tl-meta', text: mediaSummary(group.draft) });
-            const actions = foot.createDiv('momento-hp-tl-actions');
             const skip = actions.createEl('button', { cls: 'momento-hp-tl-act', text: '忽略', attr: { type: 'button', title: '忽略' } });
             const keep = actions.createEl('button', { cls: 'momento-hp-tl-act is-keep', text: '收下', attr: { type: 'button', title: '收下' } });
             const leave = async (action: () => Promise<void>) => {
@@ -509,8 +512,15 @@ function todayWidget(plugin: ChildTimelinePlugin, home: HomeApi): HomeWidget<Tod
         normalizeConfig: (raw) => ({ limit: Math.min(30, Math.max(1, Math.round(Number(raw.limit) || 8))) }),
         liveRefresh: false,
         render(body, ctx) {
-            const groups = plugin.wechat.candidates();
             const wrap = body.createDiv('momento-hp momento-hp-today');
+            // 「拾光」 on this page already lists WeChat candidates: stay out of the way instead of repeating them.
+            const twin = ctx.plugin?.getActivePage?.().widgets.some(w => w.kind === 'momento-capture' && w.config?.showWechat !== false);
+            if (twin) {
+                ctx.setHidden?.(true);
+                wrap.createDiv({ cls: 'momento-hp-tl-empty', text: '这一页的「拾光」已经在显示微信待收内容，这张卡片会保持隐藏，可以在编辑布局时删除。' });
+                return;
+            }
+            const groups = plugin.wechat.candidates();
             const undoing = renderUndo(wrap, ctx);
             ctx.setHidden?.(groups.length === 0 && !undoing);
             if (!groups.length) {
