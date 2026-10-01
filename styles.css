@@ -11535,7 +11535,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-random { --mhp-accent: #8b5cf6; }
 .momento-hp-stream { --mhp-accent: #14b8a6; }
 
-/* Buttons */
+.momento-hp /* Buttons */
 .momento-hp-btn {
   display: inline-flex;
   align-items: center;
@@ -11554,31 +11554,31 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s var(--mhp-ease);
 }
 
-.momento-hp-btn:hover { background: var(--background-modifier-hover); }
-.momento-hp-btn:active { transform: scale(0.96); }
-.momento-hp-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
-.momento-hp-btn:focus-visible,
+.momento-hp .momento-hp-btn:hover { background: var(--background-modifier-hover); }
+.momento-hp .momento-hp-btn:active { transform: scale(0.96); }
+.momento-hp .momento-hp-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+.momento-hp .momento-hp-btn:focus-visible,
 .momento-hp-memory-card:focus-visible,
-.momento-hp-chip:focus-visible,
-.momento-hp-tag:focus-visible {
+.momento-hp .momento-hp-chip:focus-visible,
+.momento-hp .momento-hp-tag:focus-visible {
   outline: 2px solid var(--mhp-accent);
   outline-offset: 2px;
 }
 
-.momento-hp-btn-icon { display: inline-flex; }
-.momento-hp-btn-icon svg { width: 14px; height: 14px; }
+.momento-hp .momento-hp-btn-icon { display: inline-flex; }
+.momento-hp .momento-hp-btn-icon svg { width: 14px; height: 14px; }
 
-.momento-hp-btn.is-primary {
+.momento-hp .momento-hp-btn.is-primary {
   border-color: transparent;
   background: var(--mhp-accent);
   color: #fff;
 }
 
-.momento-hp-btn.is-primary:hover { background: color-mix(in srgb, var(--mhp-accent) 86%, #000); }
-.momento-hp-btn.is-ghost { border-color: transparent; background: transparent; color: var(--text-muted); padding: 0; }
-.momento-hp-btn.is-ghost:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.momento-hp .momento-hp-btn.is-primary:hover { background: color-mix(in srgb, var(--mhp-accent) 86%, #000); }
+.momento-hp .momento-hp-btn.is-ghost { border-color: transparent; background: transparent; color: var(--text-muted); padding: 0; }
+.momento-hp .momento-hp-btn.is-ghost:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 
-.momento-hp-link {
+.momento-hp .momento-hp-link {
   padding: 0 4px;
   border: none;
   background: none;
@@ -11589,7 +11589,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   cursor: pointer;
 }
 
-.momento-hp-link:hover { text-decoration: underline; }
+.momento-hp .momento-hp-link:hover { text-decoration: underline; }
 
 /* Inline undo bar */
 .momento-hp-undo {
@@ -11669,9 +11669,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 }
 
 .momento-hp-quote-mark {
-  position: absolute;
-  top: 2px;
-  left: 14px;
+  /* In flow, so the mark and the text sit together in the middle of a tall card. */
+  margin: 0 0 -18px 14px;
   font-family: Georgia, "Songti SC", serif;
   font-size: 64px;
   line-height: 1;
@@ -11749,17 +11748,17 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transform: none;
 }
 
-.momento-hp-memory-actions .momento-hp-btn {
+.momento-hp .momento-hp-memory-actions .momento-hp-btn {
   border-color: transparent;
   background: color-mix(in srgb, var(--background-primary) 85%, transparent);
   backdrop-filter: blur(6px);
 }
 
-.momento-hp-btn.is-liked { color: #e11d48; }
-.momento-hp-btn.is-liked svg { fill: currentColor; }
-.momento-hp-btn.is-pop .momento-hp-btn-icon { animation: momento-hp-pop 0.35s var(--mhp-ease); }
+.momento-hp .momento-hp-btn.is-liked { color: #e11d48; }
+.momento-hp .momento-hp-btn.is-liked svg { fill: currentColor; }
+.momento-hp .momento-hp-btn.is-pop .momento-hp-btn-icon { animation: momento-hp-pop 0.35s var(--mhp-ease); }
 
-.momento-hp-nav {
+.momento-hp .momento-hp-nav {
   position: absolute;
   top: 50%;
   z-index: 1;
@@ -11774,11 +11773,11 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transition: opacity 0.2s ease;
 }
 
-.momento-hp-nav.is-prev { left: 8px; }
-.momento-hp-nav.is-next { right: 8px; }
-.momento-hp-stage:hover .momento-hp-nav,
-.momento-hp-nav:focus-visible,
-.is-mobile .momento-hp-nav { opacity: 1; }
+.momento-hp .momento-hp-nav.is-prev { left: 8px; }
+.momento-hp .momento-hp-nav.is-next { right: 8px; }
+.momento-hp .momento-hp-stage:hover .momento-hp-nav,
+.momento-hp .momento-hp-nav:focus-visible,
+.is-mobile .momento-hp .momento-hp-nav { opacity: 1; }
 
 .momento-hp-strip {
   display: flex;
@@ -11789,7 +11788,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   scrollbar-width: none;
 }
 
-.momento-hp-chip {
+.momento-hp .momento-hp-chip {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -11806,14 +11805,14 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.momento-hp-chip.is-active {
+.momento-hp .momento-hp-chip.is-active {
   border-color: var(--mhp-accent);
   background: var(--mhp-accent-soft);
   color: var(--text-normal);
   font-weight: 600;
 }
 
-.momento-hp-chip-thumb {
+.momento-hp .momento-hp-chip-thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -11824,8 +11823,8 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   background: var(--background-secondary);
 }
 
-.momento-hp-chip-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.momento-hp-chip-thumb svg { width: 12px; height: 12px; }
+.momento-hp .momento-hp-chip-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.momento-hp .momento-hp-chip-thumb svg { width: 12px; height: 12px; }
 
 .momento-hp-capture-files {
   display: flex;
@@ -11860,7 +11859,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-capture-add:hover { color: var(--mhp-accent); border-color: var(--mhp-accent); }
 .momento-hp-capture-add input { display: none; }
 
-.momento-hp-capture-remove {
+.momento-hp .momento-hp-capture-remove {
   position: absolute;
   top: -6px;
   right: -6px;
@@ -11879,9 +11878,9 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   cursor: pointer;
 }
 
-.momento-hp-capture-thumb:hover .momento-hp-capture-remove,
-.is-mobile .momento-hp-capture-remove { opacity: 1; }
-.momento-hp-capture-remove svg { width: 11px; height: 11px; }
+.momento-hp .momento-hp-capture-thumb:hover .momento-hp-capture-remove,
+.is-mobile .momento-hp .momento-hp-capture-remove { opacity: 1; }
+.momento-hp .momento-hp-capture-remove svg { width: 11px; height: 11px; }
 
 .momento-hp-capture-tags {
   display: flex;
@@ -11892,7 +11891,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   scrollbar-width: none;
 }
 
-.momento-hp-tag {
+.momento-hp .momento-hp-tag {
   flex: none;
   height: 26px;
   padding: 0 10px;
@@ -11906,7 +11905,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transition: all 0.15s ease;
 }
 
-.momento-hp-tag.is-on {
+.momento-hp .momento-hp-tag.is-on {
   border-color: var(--mhp-accent);
   background: var(--mhp-accent-soft);
   color: var(--text-normal);
@@ -11931,6 +11930,9 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 }
 
 .momento-hp-tl {
+  --tl-x: 9px;            /* rail centre from the item's left edge */
+  --tl-dot: 9px;
+  --tl-rail: color-mix(in srgb, var(--mhp-accent) 22%, transparent);
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -11938,81 +11940,82 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   overflow-y: auto;
   margin: 0 -4px;
   padding: 0 4px 6px;
-  --tl-x: 13px;          /* rail centre */
-  --tl-dot: 9px;
+  scrollbar-width: thin;
 }
+
+/* One continuous rail: day labels and items each draw their segment at the same x. */
+.momento-hp-tl-day,
+.momento-hp-tl-item { position: relative; }
+
+.momento-hp-tl-day::before,
+.momento-hp-tl-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tl-x) - 1px);
+  width: 2px;
+  background: var(--tl-rail);
+}
+
+.momento-hp-tl-day:first-child::before { top: 60%; }
+.momento-hp-tl-item:last-child .momento-hp-tl-rail::before { bottom: auto; height: 12px; }
 
 .momento-hp-tl-day {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 8px 0 2px calc(var(--tl-x) * 2 + 4px);
-  background: linear-gradient(var(--background-primary) 75%, transparent);
-  font-size: var(--font-ui-smaller);
+  padding: 10px 0 2px 26px;
+  background: linear-gradient(var(--background-primary) 80%, transparent);
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
   letter-spacing: 0.02em;
+  color: var(--text-muted);
 }
 
 .momento-hp-tl-item {
-  position: relative;
   display: flex;
-  gap: 4px;
-  padding: 6px 8px 7px 0;
   border-radius: 10px;
   cursor: pointer;
   outline: none;
   transition: background 0.15s ease, opacity 0.2s ease, transform 0.2s var(--mhp-ease), max-height 0.2s ease;
-  max-height: 600px;
+  max-height: 800px;
 }
 
 .momento-hp-tl-item:hover,
-.momento-hp-tl-item:focus-visible {
-  background: var(--background-modifier-hover);
-}
-
-.momento-hp-tl-item:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--mhp-accent);
-}
+.momento-hp-tl-item:focus-visible { background: var(--background-modifier-hover); }
+.momento-hp-tl-item:focus-visible { box-shadow: inset 0 0 0 1px var(--mhp-accent); }
 
 .momento-hp-tl-item.is-leaving {
   opacity: 0;
   transform: translateX(12px);
   max-height: 0;
-  padding-block: 0;
   overflow: hidden;
 }
 
-/* Rail: a soft line through every item and a dot at the time */
+.momento-hp-tl-item.is-fresh {
+  background: var(--mhp-accent-soft);
+  animation: momento-hp-slide-in 0.3s var(--mhp-ease);
+}
+
 .momento-hp-tl-rail {
   position: relative;
   flex: none;
-  width: calc(var(--tl-x) * 2);
+  width: 22px;
 }
 
-.momento-hp-tl-rail::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  bottom: -8px;
-  left: calc(var(--tl-x) - 1px);
-  width: 2px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--mhp-accent) 30%, transparent), color-mix(in srgb, var(--mhp-accent) 12%, transparent));
-}
-
-.momento-hp-tl-day + .momento-hp-tl-item .momento-hp-tl-rail::before { top: 10px; }
-
+/* The dot sits on the time line (body padding 7px + half of the 18px head row). */
 .momento-hp-tl-rail::after {
   content: "";
   position: absolute;
-  top: 5px;
+  top: calc(7px + (18px - var(--tl-dot)) / 2);
   left: calc(var(--tl-x) - var(--tl-dot) / 2);
   width: var(--tl-dot);
   height: var(--tl-dot);
   box-sizing: border-box;
   border-radius: 50%;
   background: var(--mhp-accent);
-  box-shadow: 0 0 0 3px var(--background-primary), 0 0 0 4px color-mix(in srgb, var(--mhp-accent) 35%, transparent);
+  box-shadow: 0 0 0 3px var(--background-primary);
   transition: transform 0.2s var(--mhp-ease);
 }
 
@@ -12021,16 +12024,10 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-tl-item.is-candidate .momento-hp-tl-rail::after {
   background: var(--background-primary);
   border: 1.5px dashed var(--mhp-accent);
-  box-shadow: 0 0 0 3px var(--background-primary);
-}
-
-.momento-hp-tl-item.is-fresh {
-  background: var(--mhp-accent-soft);
-  animation: momento-hp-slide-in 0.3s var(--mhp-ease);
 }
 
 .momento-hp-tl-body {
-  /* Wide cards: text on the left, photos on the right (narrow cards stack, see @container below). */
+  /* Wide cards: text on the left, photos on the right; narrow cards stack (see @container). */
   display: grid;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -12042,25 +12039,26 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   align-content: start;
   column-gap: 14px;
   min-width: 0;
+  padding: 7px 8px 9px 4px;
 }
 
 .momento-hp-tl-head { grid-area: head; }
 .momento-hp-tl-body > .momento-hp-tl-text,
-.momento-hp-tl-caption { grid-area: text; margin-top: 2px; }
+.momento-hp-tl-caption { grid-area: text; margin-top: 3px; }
 .momento-hp-tl-voice { grid-area: voice; justify-self: start; box-sizing: border-box; min-width: 0; margin-top: 6px; }
 .momento-hp-tl-media { grid-area: media; align-self: center; }
-.momento-hp-tl-foot { grid-area: foot; margin-top: 4px; }
+.momento-hp-tl-foot { grid-area: foot; margin-top: 5px; }
 
 .momento-hp-tl-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 18px;
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
+  height: 18px;
+  font-size: 11.5px;
+  color: var(--text-faint, var(--text-muted));
 }
 
-.momento-hp-tl-time { font-variant-numeric: tabular-nums; }
+.momento-hp-tl-time { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
 
 .momento-hp-tl-source {
   padding: 0 6px;
@@ -12081,13 +12079,14 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: var(--font-ui-small);
+  font-size: calc(var(--font-ui-small, 13px) + 0.5px);
   line-height: 1.55;
   color: var(--text-normal);
   overflow-wrap: anywhere;
 }
 
-.momento-hp-tl-text.is-placeholder { color: var(--text-faint, var(--text-muted)); }
+/* An empty caption stays out of sight; 「写一句」 in the actions opens the editor in place. */
+.momento-hp-tl-caption.is-empty:not(.is-editing) { display: none; }
 
 .momento-hp-tl-caption {
   display: flex;
@@ -12133,6 +12132,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   width: 56px;
   height: 56px;
   overflow: hidden;
@@ -12141,7 +12141,17 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   color: var(--text-muted);
 }
 
-.momento-hp-tl-thumb img { width: 100%; height: 100%; object-fit: cover; }
+/* A hairline keeps white screenshots from melting into the card. */
+.momento-hp-tl-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-normal) 10%, transparent);
+  pointer-events: none;
+}
+
+.momento-hp-tl-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .momento-hp-tl-thumb.is-video { color: var(--mhp-accent); background: var(--mhp-accent-soft); }
 
 .momento-hp-tl-more {
@@ -12158,14 +12168,13 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 
 .momento-hp-tl-voice {
   display: inline-flex;
-  align-self: flex-start;
   align-items: center;
   gap: 6px;
   max-width: 100%;
-  padding: 4px 10px 4px 6px;
+  padding: 4px 10px 4px 5px;
   border-radius: 999px;
   background: var(--mhp-accent-soft);
-  font-size: var(--font-ui-smaller);
+  font-size: 12px;
   color: var(--text-normal);
 }
 
@@ -12190,7 +12199,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--font-ui-smaller);
+  font-size: 11.5px;
   color: var(--text-muted);
 }
 
@@ -12210,33 +12219,31 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 .momento-hp-tl-item:hover .momento-hp-tl-actions,
 .momento-hp-tl-item:focus-within .momento-hp-tl-actions,
 .momento-hp-tl-item.is-fresh .momento-hp-tl-actions,
-.is-mobile .momento-hp-tl-actions {
-  opacity: 1;
-}
+.is-mobile .momento-hp-tl-actions { opacity: 1; }
 
-.momento-hp-tl-act {
+.momento-hp .momento-hp-tl-act {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  height: 22px;
-  padding: 0 7px;
+  height: 20px;
+  padding: 0 6px;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   background: transparent;
   box-shadow: none;
   color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+  font-size: 11.5px;
   cursor: pointer;
 }
 
-.momento-hp-tl-act:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-.momento-hp-tl-act svg { width: 13px; height: 13px; }
-.momento-hp-tl-act.is-keep { color: var(--mhp-accent); font-weight: 600; }
-.momento-hp-tl-act.is-undo { color: var(--mhp-accent); font-weight: 600; }
-.momento-hp-tl-act.is-liked { color: #e11d48; }
-.momento-hp-tl-act.is-liked svg { fill: currentColor; }
-.momento-hp-tl-act.is-pop svg { animation: momento-hp-pop 0.35s var(--mhp-ease); }
-.momento-hp-tl-act:disabled { opacity: 0.4; cursor: default; }
+.momento-hp .momento-hp-tl-act:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.momento-hp .momento-hp-tl-act svg { width: 13px; height: 13px; }
+.momento-hp .momento-hp-tl-act.is-keep,
+.momento-hp .momento-hp-tl-act.is-undo { color: var(--mhp-accent); font-weight: 600; }
+.momento-hp .momento-hp-tl-act.is-liked { color: #e11d48; }
+.momento-hp .momento-hp-tl-act.is-liked svg { fill: currentColor; }
+.momento-hp .momento-hp-tl-act.is-pop svg { animation: momento-hp-pop 0.35s var(--mhp-ease); }
+.momento-hp .momento-hp-tl-act:disabled { opacity: 0.4; cursor: default; }
 
 .momento-hp-tl-empty {
   display: flex;
@@ -12249,9 +12256,10 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   color: var(--text-muted);
 }
 
-.momento-hp-more {
+.momento-hp .momento-hp-more {
   flex: none;
   align-self: center;
+  height: auto;
   border: none;
   background: none;
   box-shadow: none;
@@ -12312,7 +12320,7 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
 
 .momento-hp-composer-input:focus { outline: none; box-shadow: none; }
 
-.momento-hp-composer-send {
+.momento-hp .momento-hp-composer-send {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -12329,9 +12337,9 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   transition: background 0.15s ease, color 0.15s ease, transform 0.15s var(--mhp-ease);
 }
 
-.momento-hp-composer-send svg { width: 15px; height: 15px; }
-.momento-hp-composer-send.is-ready { background: var(--mhp-accent); color: #fff; cursor: pointer; }
-.momento-hp-composer-send.is-ready:active { transform: scale(0.92); }
+.momento-hp .momento-hp-composer-send svg { width: 15px; height: 15px; }
+.momento-hp .momento-hp-composer-send.is-ready { background: var(--mhp-accent); color: #fff; cursor: pointer; }
+.momento-hp .momento-hp-composer-send.is-ready:active { transform: scale(0.92); }
 
 .momento-hp-composer-extra {
   display: none;
@@ -12357,11 +12365,23 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "head" "text" "voice" "media" "foot";
   }
-  .momento-hp-tl-media { align-self: start; margin-top: 6px; flex-wrap: wrap; }
+  /* Photos share the full width instead of leaving the right half empty. */
+  .momento-hp-tl-media {
+    display: grid;
+    grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+    margin-top: 7px;
+  }
+  .momento-hp-tl-media.is-n1 { --n: 1; }
+  .momento-hp-tl-media.is-n2 { --n: 2; }
+  .momento-hp-tl-media.is-n3 { --n: 3; }
+  .momento-hp-tl-media.is-n4 { --n: 4; }
+  .momento-hp-tl-media .momento-hp-tl-thumb { width: auto; height: auto; aspect-ratio: 1; }
+  /* One photo: a full-width banner of fixed height (an aspect ratio plus max-height would shrink its width). */
+  .momento-hp-tl-media.is-n1 .momento-hp-tl-thumb { aspect-ratio: auto; height: 150px; }
+  .momento-hp-tl-media.is-n2 .momento-hp-tl-thumb { aspect-ratio: 4 / 3; }
 }
 
 @container (max-width: 380px) {
-  .momento-hp-tl-thumb { width: 46px; height: 46px; }
   .momento-hp-composer-hint { display: none; }
   .momento-hp-eyebrow { font-size: 16px; }
 }

@@ -150,6 +150,8 @@ function renderMedia(plugin: ChildTimelinePlugin, parent: HTMLElement, media: { 
     if (media.images.length || media.videos.length) {
         const row = parent.createDiv('momento-hp-tl-media');
         const shown = media.images.slice(0, 4);
+        // Narrow cards split the full width between the tiles (one photo becomes a wide banner).
+        row.addClass(`is-n${Math.min(4, shown.length + (media.videos.length ? 1 : 0))}`);
         shown.forEach((path, i) => {
             const cell = row.createDiv('momento-hp-tl-thumb');
             const url = plugin.resourceUrl(path);
@@ -228,10 +230,16 @@ function renderTimeline(plugin: ChildTimelinePlugin, parent: HTMLElement, items:
             const holder = body.createDiv({ cls: 'momento-hp-tl-caption', attr: { title: '点击写一句话，收下时一起保存' } });
             const caption = captions.get(group.key) ?? group.draft.content;
             const transcript = Object.values(group.draft.audioTranscripts)[0];
+            // An empty caption only offers “添加一句话…” on hover / focus, so pending items stay quiet.
+            if (!caption) holder.addClass('is-empty');
             holder.createDiv({ cls: `momento-hp-tl-text${caption ? '' : ' is-placeholder'}`, text: caption || '添加一句话…' });
             if (captions.has(group.key)) holder.createSpan({ cls: 'momento-hp-edited', text: '已编辑' });
             holder.onclick = (event) => { event.stopPropagation(); on.editCaption(holder, group); };
             renderMedia(plugin, body, group.draft, transcript);
+            if (!caption) {
+                const write = actions.createEl('button', { cls: 'momento-hp-tl-act', text: '写一句', attr: { type: 'button', title: '写一句话，收下时一起保存' } });
+                write.onclick = (event) => { event.stopPropagation(); on.editCaption(holder, group); };
+            }
             const skip = actions.createEl('button', { cls: 'momento-hp-tl-act', text: '忽略', attr: { type: 'button', title: '忽略' } });
             const keep = actions.createEl('button', { cls: 'momento-hp-tl-act is-keep', text: '收下', attr: { type: 'button', title: '收下' } });
             const leave = async (action: () => Promise<void>) => {
