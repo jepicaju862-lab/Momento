@@ -11341,3 +11341,289 @@ Constrain images and videos to the parent width and preserve their intrinsic asp
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ============ WeChat candidates (来自微信 / 待收) ============ */
+
+.timeline-post.is-candidate .timeline-post-content {
+  border-style: dashed;
+  border-color: var(--ct-accent-glow);
+  background: color-mix(in srgb, var(--background-primary) 88%, var(--ct-accent-lightest));
+}
+
+.timeline-post.is-candidate .timeline-post-body {
+  opacity: 0.88;
+}
+
+.timeline-post.is-candidate .timeline-post-dot {
+  background: transparent;
+  border-style: dashed;
+}
+
+.timeline-post-candidate-badge {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--font-ui-smaller);
+  color: var(--ct-accent-dark);
+  background: var(--ct-accent-glow-soft);
+}
+
+.timeline-candidate-bar {
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-candidate-hint {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.timeline-candidate-bar .post-actions-right {
+  gap: 8px;
+}
+
+.life-wechat-section {
+  margin: 0 0 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  background: var(--background-primary);
+  overflow: hidden;
+}
+
+.life-wechat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.life-wechat-chevron {
+  width: 10px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.life-wechat-title {
+  flex: 1;
+}
+
+.life-wechat-badge,
+.life-wechat-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--font-ui-smaller);
+  font-weight: 500;
+  color: var(--ct-accent-dark);
+  background: var(--ct-accent-glow-soft);
+}
+
+.life-wechat-body.is-collapsed {
+  display: none;
+}
+
+.life-wechat-empty {
+  padding: 4px 14px 12px;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.life-wechat-list {
+  max-height: 320px;
+  overflow-y: auto;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.life-wechat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.life-wechat-row:hover,
+.life-wechat-row.is-selected {
+  background: var(--background-modifier-hover);
+}
+
+.life-wechat-check {
+  flex: none;
+  margin: 0;
+}
+
+.life-wechat-thumb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--text-muted);
+  background: var(--background-secondary);
+}
+
+.life-wechat-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.life-wechat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.life-wechat-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--font-ui-small);
+}
+
+.life-wechat-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.life-wechat-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.life-wechat-footer:empty {
+  display: none;
+}
+
+.momento-notice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ============ Home Pages widgets (rendered inside Home Pages cards) ============ */
+
+.momento-hp-today,
+.momento-hp-memories {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.momento-hp-candidate,
+.momento-hp-memory {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.momento-hp-candidate:hover,
+.momento-hp-memory:hover,
+.momento-hp-random:hover {
+  background: var(--background-modifier-hover);
+}
+
+.momento-hp-thumbs {
+  flex: none;
+  display: flex;
+}
+
+.momento-hp-thumbs .momento-hp-thumb + .momento-hp-thumb {
+  margin-left: -14px;
+  box-shadow: -2px 0 0 var(--background-primary);
+}
+
+.momento-hp-thumb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--text-muted);
+  background: var(--background-secondary);
+}
+
+.momento-hp-thumb img,
+.momento-hp-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.momento-hp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.momento-hp-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--font-ui-small);
+}
+
+.momento-hp-meta,
+.momento-hp-year {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.momento-hp-actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+
+.momento-hp-actions button {
+  padding: 2px 10px;
+  font-size: var(--font-ui-smaller);
+}
+
+.momento-hp-more {
+  padding: 4px 6px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-accent);
+  cursor: pointer;
+}
+
+.momento-hp-random {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 4px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.momento-hp-cover {
+  flex: 1;
+  min-height: 80px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--background-secondary);
+}
+
+.momento-hp-random .momento-hp-text {
+  -webkit-line-clamp: 3;
+}

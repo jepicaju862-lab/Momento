@@ -23,6 +23,17 @@ export interface TimelineEntry {
     comments?: TimelineComment[];
     createdAt: number;
     tags?: string[];
+    /** Set when the entry was kept from another plugin's data (e.g. a WeChat2Ob message group). */
+    source?: EntrySource;
+}
+
+export interface EntrySource {
+    /** Providing plugin id, e.g. "wechat2ob". */
+    plugin: string;
+    /** Stable keys of the original items; used to never keep the same item twice. */
+    keys: string[];
+    /** Note that already contains the original content (skipped by daily-note sync). */
+    notePath?: string;
 }
 
 export interface TimelineComment {
@@ -46,11 +57,15 @@ export interface ChildTimelineSettings {
     batchImportDefaultText: string;
     dailyNoteSyncEnabled: boolean;
     dailyNotePathTemplate: string;
+    /** Keep WeChat photo / video / voice groups automatically instead of waiting for a tap. */
+    wechatAutoKeep: boolean;
 }
 
 export interface PluginData {
     settings: ChildTimelineSettings;
     entries: TimelineEntry[];
+    /** WeChat message keys the user chose not to keep → when that happened (ms). */
+    wechatDismissed: Record<string, number>;
 }
 
 export const DEFAULT_SETTINGS: ChildTimelineSettings = {
@@ -66,6 +81,7 @@ export const DEFAULT_SETTINGS: ChildTimelineSettings = {
     batchImportDefaultText: '',
     dailyNoteSyncEnabled: false,
     dailyNotePathTemplate: 'YYYY-MM-DD.md',
+    wechatAutoKeep: false,
     customTags: [
         '旅行',
         '学习',
@@ -80,6 +96,7 @@ export const DEFAULT_SETTINGS: ChildTimelineSettings = {
 export const DEFAULT_DATA: PluginData = {
     settings: DEFAULT_SETTINGS,
     entries: [],
+    wechatDismissed: {},
 }
 
 export class ChildTimelineSettingTab extends PluginSettingTab {
@@ -230,6 +247,27 @@ export class ChildTimelineSettingTab extends PluginSettingTab {
                 .setValue(!!this.plugin.data.settings.sttAutoTranscribe)
                 .onChange(async (value) => {
                     this.plugin.data.settings.sttAutoTranscribe = value;
+                    await this.plugin.savePluginData();
+                }));
+
+        // ---- WeChat ----
+        new Setting(containerEl)
+            .setName('💬 微信收录')
+            .setHeading();
+        containerEl.createEl('p', {
+            text: this.plugin.wechat.available()
+                ? '已连接 WeChat2Ob。微信里的照片、视频和语音会按会话和时间自动分组，作为“待收”出现在时间线、侧栏「来自微信」和首页「今日拾光」，轻点即可收下。'
+                : '安装并启用带插件 API 的 WeChat2Ob 后，微信里的照片、视频和语音会自动成为待收的拾光候选。',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('媒体自动收下')
+            .setDesc('开启后，照片、视频和语音组不再等待确认，同步后直接存为拾光，并给出可撤销的提示。')
+            .addToggle(toggle => toggle
+                .setValue(!!this.plugin.data.settings.wechatAutoKeep)
+                .onChange(async (value) => {
+                    this.plugin.data.settings.wechatAutoKeep = value;
                     await this.plugin.savePluginData();
                 }));
 

@@ -10,6 +10,7 @@
     "check:release": "node scripts/check-release.mjs",
     "build:release": "npm run build && npm run check:release",
     "test:cli": "node scripts/smoke-cli.mjs",
+    "test:wechat": "node scripts/test-wechat.mjs",
     "capture-server": "node tools/capture_server.js",
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
