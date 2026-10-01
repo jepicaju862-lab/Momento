@@ -2,7 +2,7 @@ import { EventRef, Notice, Plugin, WorkspaceLeaf, normalizePath, requestUrl, TFi
 import { PluginData, DEFAULT_DATA, ChildTimelineSettingTab, TimelineEntry, EntrySource } from './settings';
 import { TIMELINE_VIEW_TYPE, TimelineView } from './view';
 import { AddPostModal } from './post-modal';
-import { WechatBridge, WECHAT_UPDATED_EVENT } from './wechat-bridge';
+import { WechatBridge, WECHAT_SOURCE, WECHAT_UPDATED_EVENT } from './wechat-bridge';
 import { createMomentoApi, MOMENTO_CHANGED, MOMENTO_READY, type MomentoApi } from './momento-api';
 import { registerHomeWidgets } from './home-widgets';
 import { findSourcedEntry, newSourcedEntry, type EntryDraft } from './entry-source';
@@ -139,6 +139,7 @@ export default class ChildTimelinePlugin extends Plugin {
         if (existing) return { id: existing.id, created: false };
         const entry = newSourcedEntry(draft, source);
         await this.addEntry(entry);
+        if (entry.source?.plugin === WECHAT_SOURCE) void this.wechat.markProcessed(entry.source.keys, true);
         return { id: entry.id, created: true };
     }
 
@@ -318,6 +319,8 @@ export default class ChildTimelinePlugin extends Plugin {
         this.data.entries = this.data.entries.filter(e => e.id !== entryId);
         await this.savePluginData();
         this.app.workspace.trigger('child-timeline-data-changed');
+        // A WeChat memory removed (deleted or undone): its messages are 待整理 in WeChat2Ob's table again.
+        if (entry?.source?.plugin === WECHAT_SOURCE) void this.wechat.markProcessed(entry.source.keys, false);
     }
 
     async updateEntry(updatedEntry: TimelineEntry) {

@@ -20,7 +20,12 @@ const img = (path: string) => ({ kind: 'image', path, mimeType: 'image/jpeg' });
 function setup(messages: WechatMessage[]) {
     const events: string[] = [];
     const data = { entries: [] as TimelineEntry[], settings: { wechatAutoKeep: false }, wechatDismissed: {} as Record<string, number> };
-    const wechatApi = { version: 1, query: async () => ({ messages }) };
+    const statusCalls: Array<[string[], boolean]> = [];
+    const wechatApi = {
+        version: 1,
+        query: async () => ({ messages }),
+        setProcessed: async (keys: string[], processed: boolean) => { statusCalls.push([[...keys].sort(), processed]); return { changed: keys.length, skipped: 0 }; },
+    };
     const plugin = {
         data,
         app: {
@@ -29,14 +34,20 @@ function setup(messages: WechatMessage[]) {
             workspace: { trigger: (name: string) => events.push(name) },
         },
         savePluginData: async () => {},
+        // Same rules as main.ts: entry-source.ts plus the WeChat2Ob status hooks.
         captureEntry: async (draft: EntryDraft, source: EntrySource) => {
             const existing = findSourcedEntry(data.entries, source);
             if (existing) return { id: existing.id, created: false };
             const entry = newSourcedEntry(draft, source);
             data.entries.push(entry);
+            if (entry.source?.plugin === 'wechat2ob') await plugin.wechat.markProcessed(entry.source.keys, true);
             return { id: entry.id, created: true };
         },
-        deleteEntry: async (id: string) => { data.entries = data.entries.filter(e => e.id !== id); },
+        deleteEntry: async (id: string) => {
+            const entry = data.entries.find(e => e.id === id);
+            data.entries = data.entries.filter(e => e.id !== id);
+            if (entry?.source?.plugin === 'wechat2ob') await plugin.wechat.markProcessed(entry.source.keys, false);
+        },
         openEntry: async () => {},
         resourceUrl: () => '',
         wechat: undefined as unknown as WechatBridge,
@@ -45,7 +56,7 @@ function setup(messages: WechatMessage[]) {
     plugin.wechat = new WechatBridge(plugin as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api = createMomentoApi(plugin as any);
-    return { plugin, data, api, events, messages };
+    return { plugin, data, api, events, messages, statusCalls, wechatApi };
 }
 
 const burst = () => [
@@ -154,4 +165,42 @@ test('API lists entries and finds those from this day in earlier years', async (
     const copy = api.list()[0];
     copy.images.push('mutated');
     assert.equal(api.list()[0].images.length, 0, 'API returns copies');
+});
+
+test('keeping marks the messages 已整理 in WeChat2Ob, undo and delete put them back', async () => {
+    const { plugin, data, statusCalls } = setup(burst());
+    await plugin.wechat.refresh();
+    statusCalls.length = 0;
+    const [group] = plugin.wechat.candidates();
+    const id = await plugin.wechat.keep([group]);
+    assert.deepEqual(statusCalls, [[['cap', 'p1', 'p2'], true]]);
+    await plugin.wechat.unkeep([id!]);
+    assert.deepEqual(statusCalls[1], [['cap', 'p1', 'p2'], false]);
+    assert.equal(data.entries.length, 0);
+});
+
+test('memories kept earlier are reconciled once per session; old WeChat2Ob without setProcessed is fine', async () => {
+    const { plugin, data, statusCalls } = setup(burst());
+    data.entries.push(newSourcedEntry({ content: 'old' }, { plugin: 'wechat2ob', keys: ['milk'] }));
+    await plugin.wechat.refresh();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.deepEqual(statusCalls, [[['milk'], true]], 'kept before: marked once');
+    await plugin.wechat.refresh();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(statusCalls.length, 1, 'not again in the same session');
+
+    const old = setup(burst());
+    delete (old.wechatApi as { setProcessed?: unknown }).setProcessed;
+    await old.plugin.wechat.refresh();
+    const [group] = old.plugin.wechat.candidates();
+    assert.ok(await old.plugin.wechat.keep([group]), 'keeping still works without setProcessed');
+});
+
+test('a failing status update never blocks keeping', async () => {
+    const { plugin, data, wechatApi } = setup(burst());
+    (wechatApi as { setProcessed: unknown }).setProcessed = async () => { throw new Error('table locked'); };
+    await plugin.wechat.refresh();
+    const [group] = plugin.wechat.candidates();
+    assert.ok(await plugin.wechat.keep([group]));
+    assert.equal(data.entries.length, 1);
 });

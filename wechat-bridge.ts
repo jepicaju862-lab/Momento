@@ -9,6 +9,8 @@ import {
 interface Wechat2obApi {
     version: 1;
     query(options: { days?: number; limit?: number; kinds?: string[] }): Promise<{ messages: WechatMessage[] }>;
+    /** Newer WeChat2Ob: marks messages 已整理 / 待整理 in its inbox table. */
+    setProcessed?(keys: string[], processed: boolean): Promise<{ changed: number; skipped: number }>;
 }
 
 /** Fired after the candidate snapshot changed (new messages, keep, dismiss). */
@@ -28,6 +30,7 @@ export class WechatBridge {
     private screenshots = new Map<string, boolean>();
     private loading: Promise<void> | null = null;
     private loadedOnce = false;
+    private reconciled = false;
 
     constructor(private plugin: ChildTimelinePlugin) {}
 
@@ -63,6 +66,11 @@ export class WechatBridge {
         this.messages = messages;
         this.loadedOnce = true;
         this.pruneDismissed();
+        // Once per session: memories kept before the table could be updated (or while WeChat2Ob was off).
+        if (api?.setProcessed && !this.reconciled) {
+            this.reconciled = true;
+            void this.markProcessed(Array.from(this.keptIndex().keys()), true);
+        }
         this.plugin.app.workspace.trigger(WECHAT_UPDATED_EVENT);
     }
 
@@ -167,6 +175,20 @@ export class WechatBridge {
             await this.plugin.savePluginData();
         }
         this.plugin.app.workspace.trigger(WECHAT_UPDATED_EVENT);
+    }
+
+    /**
+     * Keeps WeChat2Ob's inbox table in step: kept messages are 已整理, undone or deleted ones 待整理 again.
+     * Best effort: a failure is logged and never blocks keeping.
+     */
+    async markProcessed(keys: string[], processed: boolean): Promise<void> {
+        const api = this.api();
+        if (!api?.setProcessed || !keys.length) return;
+        try {
+            await api.setProcessed(keys, processed);
+        } catch (err) {
+            console.error('Momento: updating WeChat2Ob inbox status failed', err);
+        }
     }
 
     /** After WeChat2Ob synced: refresh, then auto-keep when the user asked for it. */
