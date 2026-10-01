@@ -7,6 +7,7 @@ export default defineConfig(
     'node_modules',
     '.obsidian/**',
     '.smoke-shiguang-cli/**',
+    '.test-out/**',
     'main.js',
     'esbuild.config.mjs',
     'eslint.config.mjs',

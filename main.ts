@@ -1,7 +1,11 @@
-import { Notice, Plugin, WorkspaceLeaf, normalizePath, requestUrl, TFile } from 'obsidian';
-import { PluginData, DEFAULT_DATA, ChildTimelineSettingTab, TimelineEntry } from './settings';
+import { EventRef, Notice, Plugin, WorkspaceLeaf, normalizePath, requestUrl, TFile } from 'obsidian';
+import { PluginData, DEFAULT_DATA, ChildTimelineSettingTab, TimelineEntry, EntrySource } from './settings';
 import { TIMELINE_VIEW_TYPE, TimelineView } from './view';
 import { AddPostModal } from './post-modal';
+import { WechatBridge, WECHAT_SOURCE, WECHAT_UPDATED_EVENT } from './wechat-bridge';
+import { createMomentoApi, MOMENTO_CHANGED, MOMENTO_READY, type MomentoApi } from './momento-api';
+import { registerHomeWidgets } from './home-widgets';
+import { findSourcedEntry, newSourcedEntry, type EntryDraft } from './entry-source';
 
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.flac', '.webm', '.ogg'];
 
@@ -11,11 +15,25 @@ function isLikelyAudioName(name: string): boolean {
     return hasAudioExt && /(^|[/\\_-])(voice|audio|record|recording|录音)([/\\_.-]|$)/i.test(name);
 }
 
+/** Keeps only well-formed “message key → time” pairs from saved data. */
+function dismissedFrom(value: unknown): Record<string, number> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    const result: Record<string, number> = {};
+    for (const [key, at] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof at === 'number' && Number.isFinite(at)) result[key] = at;
+    }
+    return result;
+}
+
 export default class ChildTimelinePlugin extends Plugin {
     data: PluginData;
+    wechat: WechatBridge;
+    /** Public API for other plugins; see momento-api.ts. */
+    api?: MomentoApi;
 
     async onload() {
         await this.loadPluginData();
+        this.wechat = new WechatBridge(this);
 
         this.registerView(
             TIMELINE_VIEW_TYPE,
@@ -53,10 +71,82 @@ export default class ChildTimelinePlugin extends Plugin {
             }
         });
 
+        this.addCommand({
+            id: 'wechat-keep-all',
+            name: '收下全部待收的微信回忆',
+            callback: async () => {
+                const ids = await this.wechat.keepEach(this.wechat.candidates());
+                if (ids.length) this.wechat.notifyKept(ids);
+                else new Notice('没有待收的微信回忆');
+            }
+        });
+
         this.addSettingTab(new ChildTimelineSettingTab(this.app, this));
+
+        // ---- Integrations: WeChat2Ob → candidates; Home Pages ← widgets; others ← api ----
+        const workspace = this.app.workspace as unknown as {
+            on(name: string, callback: (...args: unknown[]) => unknown): EventRef;
+            trigger(name: string, ...data: unknown[]): void;
+        };
+        this.registerEvent(workspace.on('wechat2ob:synced', () => void this.wechat.onSynced()));
+        this.registerEvent(workspace.on('wechat2ob:ready', () => void this.wechat.refresh()));
+        const changed = () => workspace.trigger(MOMENTO_CHANGED);
+        this.registerEvent(workspace.on('child-timeline-data-changed', changed));
+        this.registerEvent(workspace.on(WECHAT_UPDATED_EVENT, changed));
+        this.api = createMomentoApi(this);
+        const homeWidgets = registerHomeWidgets(this);
+        this.addCommand({
+            id: 'pin-home-widgets',
+            name: '在首页添加拾光组件',
+            callback: async () => {
+                if (!(await homeWidgets.pinAll())) new Notice('请先安装并启用首页插件');
+            }
+        });
+        workspace.trigger(MOMENTO_READY, this.api);
+        this.app.workspace.onLayoutReady(() => void this.wechat.refresh());
     }
 
     onunload() {
+        this.api = undefined;
+    }
+
+    /** Opens the timeline and scrolls to an entry. */
+    async openEntry(entryId: string) {
+        await this.activateView();
+        const view = this.app.workspace.getLeavesOfType(TIMELINE_VIEW_TYPE)[0]?.view;
+        if (view instanceof TimelineView) await view.jumpToEntry(entryId);
+    }
+
+    /** Opens the timeline at a date (candidates are shown on their date). */
+    async openDate(date: string) {
+        await this.activateView();
+        const view = this.app.workspace.getLeavesOfType(TIMELINE_VIEW_TYPE)[0]?.view;
+        if (view instanceof TimelineView) await view.jumpToDate(date);
+    }
+
+    /** Displayable URL for a media path or bare file name. */
+    resourceUrl(path: string): string {
+        const file = this.app.vault.getAbstractFileByPath(this.resolveMediaPath(path));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : '';
+    }
+
+    /**
+     * Creates an entry from another plugin's data at most once per source item:
+     * when any of `source.keys` is already kept, the existing entry is returned.
+     */
+    async captureEntry(draft: EntryDraft, source: EntrySource): Promise<{ id: string; created: boolean }> {
+        const existing = findSourcedEntry(this.data.entries, source);
+        if (existing) return { id: existing.id, created: false };
+        const entry = newSourcedEntry(draft, source);
+        await this.addEntry(entry);
+        if (entry.source?.plugin === WECHAT_SOURCE) void this.wechat.markProcessed(entry.source.keys, true);
+        return { id: entry.id, created: true };
+    }
+
+    /** Media an entry may delete with itself: entries kept from another plugin never own files outside Momento's folder. */
+    private ownsMedia(entry: TimelineEntry, filename: string): boolean {
+        if (!entry.source) return true;
+        return this.resolveMediaPath(filename).startsWith(`${this.getAttachmentFolder()}/`);
     }
 
     async activateView() {
@@ -89,6 +179,7 @@ export default class ChildTimelinePlugin extends Plugin {
             this.data = {
                 settings: Object.assign({}, DEFAULT_DATA.settings, raw.settings || {}),
                 entries: raw.entries || [],
+                wechatDismissed: dismissedFrom((raw as { wechatDismissed?: unknown }).wechatDismissed),
             };
             const safeAttachmentFolder = this.getAttachmentFolder();
             if (this.data.settings.attachmentFolder !== safeAttachmentFolder) {
@@ -221,13 +312,15 @@ export default class ChildTimelinePlugin extends Plugin {
         if (entry) {
             const media = [...(entry.images || []), ...(entry.videos || []), ...(entry.audios || []), ...(entry.files || [])];
             for (const m of media) {
-                await this.deleteMediaFile(m);
+                if (this.ownsMedia(entry, m)) await this.deleteMediaFile(m);
             }
             await this.removeDailyNoteEntrySafely(entry.id, entry.date);
         }
         this.data.entries = this.data.entries.filter(e => e.id !== entryId);
         await this.savePluginData();
         this.app.workspace.trigger('child-timeline-data-changed');
+        // A WeChat memory removed (deleted or undone): its messages are 待整理 in WeChat2Ob's table again.
+        if (entry?.source?.plugin === WECHAT_SOURCE) void this.wechat.markProcessed(entry.source.keys, false);
     }
 
     async updateEntry(updatedEntry: TimelineEntry) {
@@ -239,7 +332,7 @@ export default class ChildTimelinePlugin extends Plugin {
             const removedMedia = oldMedia.filter(m => !newMedia.includes(m));
             
             for (const m of removedMedia) {
-                await this.deleteMediaFile(m);
+                if (this.ownsMedia(oldEntry, m)) await this.deleteMediaFile(m);
             }
 
             this.data.entries[index] = updatedEntry;
@@ -298,6 +391,8 @@ export default class ChildTimelinePlugin extends Plugin {
 
     private async syncEntryToDailyNote(entry: TimelineEntry, previousDate?: string): Promise<void> {
         if (!this.data.settings.dailyNoteSyncEnabled) return;
+        // The source already wrote this content into a note (e.g. WeChat2Ob's diary): never write it twice.
+        if (entry.source?.notePath) return;
         if (previousDate && previousDate !== entry.date) await this.removeDailyNoteEntry(entry.id, previousDate);
 
         const path = this.getDailyNotePath(entry.date);

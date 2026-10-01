@@ -60,6 +60,24 @@ try {
   const markdown = fs.readFileSync(exportPath, "utf8");
   assert(markdown.includes("会议记录已整理") && markdown.includes("会后整理行动项"), "markdown export missed data");
 
+  // Fields the CLI does not manage (WeChat ignore list, entry sources) survive CLI writes.
+  const stored = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+  stored.wechatDismissed = { "msg-1": 1 };
+  stored.entries[0].source = { plugin: "wechat2ob", keys: ["msg-2"] };
+  fs.writeFileSync(dataPath, JSON.stringify(stored), "utf8");
+  json(["like", entry.id]);
+  const after = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+  assert(after.wechatDismissed?.["msg-1"] === 1, "CLI write dropped wechatDismissed");
+  assert(after.entries[0].source?.keys?.[0] === "msg-2", "CLI write dropped entry source");
+
+  // Without --data, the community install folder (manifest id "momento") is found.
+  const communityVault = path.join(tempRoot, "community");
+  const communityData = path.join(communityVault, ".obsidian", "plugins", "momento", "data.json");
+  fs.mkdirSync(path.dirname(communityData), { recursive: true });
+  fs.writeFileSync(communityData, JSON.stringify({ settings: {}, entries: [] }), "utf8");
+  execFileSync(process.execPath, [cli, "capture", "社区安装路径", "--json"], { cwd: communityVault, encoding: "utf8" });
+  assert(JSON.parse(fs.readFileSync(communityData, "utf8")).entries.length === 1, "CLI did not find the momento plugin folder");
+
   const report = json(["doctor"]);
   assert(report.entries === 1, "doctor entry count mismatch");
   assert(report.audios === 1 && report.comments === 1, "doctor media/comment counts mismatch");

@@ -32,8 +32,14 @@
 - 📱 **Mobile LAN Quick Capture**: Lightweight local HTTP server enabling quick record creation from iOS Shortcuts or Android (Tasker/MacroDroid) without opening the Obsidian app.
 - 📄 **Markdown Export**: Export selected records to structured Markdown files complete with embedded media links, comments, and transcripts.
 - 🤖 **Agent & CLI Integration**: Built-in CLI tool (`cli/shiguang.js`) allowing AI agents to capture, search, comment, like, and export records.
+- 💬 **WeChat Memories (with WeChat2Ob)**: Photos, videos and voice messages you send to WeChat are grouped by conversation and time (a burst of photos plus a caption becomes one memory) and offered as *pending* cards in the timeline, the sidebar "来自微信" list and the Home Pages "今日拾光" card. One tap keeps them; nothing is saved until you do, and everything can be undone. Screenshots and plain text are left out of the reminders but can be kept from the list.
+- 🏠 **Home Pages Widgets**: "拾光" (a timeline of recent memories in Momento's style, with a one-line composer on top and pending WeChat memories in place), "今日拾光" (only pending WeChat memories, hidden when there are none), "那年今日" (this day in earlier years) and "随机回忆" (a random memory). Run "在首页添加拾光组件" to pin them.
 
 ---
+
+### Plugin API
+
+Other plugins can read memories and keep items through `app.plugins.plugins["momento"].api` (version 1; see `momento-api.ts`). Momento fires `momento:ready` when loaded and `momento:changed` when entries or WeChat candidates change. Entries kept from another plugin carry a `source` (`plugin`, `keys`, optional `notePath`): the same item is never kept twice, deleting such an entry never deletes the other plugin's files, and entries whose content is already in a note are not written to the daily note again.
 
 ### Installation
 
@@ -104,8 +110,14 @@ This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. 
 - 📱 **手机局域网快录**：内置轻量级后台 HTTP 服务，无需在手机上打开 Obsidian 即可通过 iOS 快捷指令或 Android 自动化工具一键推送记录与音频。
 - 📄 **Markdown 导出**：可批量选择记录并导出为标准 Obsidian Markdown 文件，完整保留媒体链接、评论和语音转写。
 - 🤖 **CLI 与 Agent 接口**：提供独立的 CLI 工具（`cli/shiguang.js`），方便 AI Agent 直接进行数据采集、检索、点赞、评论和数据导出。
+- 💬 **微信收录（配合 WeChat2Ob）**：发到微信里的照片、视频和语音会按会话和时间自动分组（连发几张照片再补一句话会合成一条），以「待收」卡片出现在时间线、侧栏「来自微信」和首页「今日拾光」，轻点即可收下。收下前不写入任何数据，所有操作都可撤销；截图和纯文字不打扰，需要时也能在列表里一键收下。
+- 🏠 **首页组件（配合 Home Pages）**：「拾光」（与拾光一致的时间线：顶部一行随手记，最近的记录与微信待收内容按时间排列）、「今日拾光」（只看微信待收，没有时自动隐藏）、「那年今日」、「随机回忆」。运行命令「在首页添加拾光组件」即可一键添加。
 
 ---
+
+### 插件 API
+
+其他插件可通过 `app.plugins.plugins["momento"].api`（version 1，见 `momento-api.ts`）读取记录、收下来自其他插件的内容。加载完成触发 `momento:ready`，记录或微信候选变化时触发 `momento:changed`。从其他插件收下的记录带有 `source`（`plugin`、`keys`、可选 `notePath`）：同一条内容不会重复收下；删除这类记录不会删除来源插件的文件；内容已在笔记中的记录不会再次写入日记。
 
 ### 安装说明
 

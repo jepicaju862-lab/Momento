@@ -1,4 +1,4 @@
-﻿import { ItemView, WorkspaceLeaf, normalizePath, setIcon, Notice, MarkdownRenderer } from 'obsidian';
+﻿import { ItemView, WorkspaceLeaf, normalizePath, setIcon, Notice, MarkdownRenderer, type EventRef } from 'obsidian';
 import ChildTimelinePlugin from './main';
 import { Platform } from 'obsidian';
 import { TFile } from 'obsidian';
@@ -8,6 +8,8 @@ import { CameraCaptureModal, openImageSourceMenu, prefersNativeCameraPicker } fr
 import { createRoot, Root } from 'react-dom/client';
 import React from 'react';
 import { MemoryWalkApp } from './components/MemoryWalkApp';
+import { WECHAT_UPDATED_EVENT } from './wechat-bridge';
+import type { WechatGroup } from './wechat-candidates';
 
 export const TIMELINE_VIEW_TYPE = "child-timeline-view";
 
@@ -19,6 +21,8 @@ interface RenderedPost {
     ageStr: string;
     ageYear: number;
     ageMonth: number;
+    /** A WeChat group waiting to be kept; shown in the timeline but not saved yet. */
+    candidate?: WechatGroup;
 }
 
 interface MonthGroup {
@@ -60,6 +64,9 @@ export class TimelineView extends ItemView {
     hasRandomRoamed = false;
     selectionMode = false;
     selectedEntryIds = new Set<string>();
+    /** 「来自微信」: selected group keys and whether the list is open. */
+    wechatSelected = new Set<string>();
+    wechatExpanded: boolean | null = null;
     
     timelineObserver: IntersectionObserver | null = null;
     galleryObserver: IntersectionObserver | null = null;
@@ -112,6 +119,11 @@ export class TimelineView extends ItemView {
 
         this.registerEvent(this.app.workspace.on('child-timeline-settings-updated', () => this.renderView()));
         this.registerEvent(this.app.workspace.on('child-timeline-data-changed', () => this.renderView()));
+        // New WeChat candidates only matter to the timeline (and its sidebar); leave 3D / gallery undisturbed.
+        const workspace = this.app.workspace as unknown as { on(name: string, callback: () => unknown): EventRef };
+        this.registerEvent(workspace.on(WECHAT_UPDATED_EVENT, () => {
+            if (this.viewMode === 'timeline') void this.renderView();
+        }));
         this.registerEvent(this.app.workspace.on('shiguang-jump-to-entry', (entryId: string) => {
             void this.jumpToEntry(entryId);
         }));
@@ -191,7 +203,8 @@ export class TimelineView extends ItemView {
     }
 
     postsForDateKey(dateKey: string): RenderedPost[] {
-        return this.getFilteredPosts().filter(post => this.dateKey(post.date) === dateKey);
+        // Candidates are not saved yet, so they can't be selected for export.
+        return this.getFilteredPosts().filter(post => !post.candidate && this.dateKey(post.date) === dateKey);
     }
 
     togglePostSelection(entryId: string) {
@@ -639,6 +652,25 @@ export class TimelineView extends ItemView {
         return posts;
     }
 
+    /** A candidate group shaped like an entry, so the timeline can render it in place. */
+    candidateEntry(group: WechatGroup): TimelineEntry {
+        return {
+            id: `wechat-candidate:${group.key}`,
+            date: group.draft.date,
+            childName: '',
+            content: group.draft.content,
+            images: group.draft.images,
+            videos: group.draft.videos,
+            audios: group.draft.audios,
+            files: group.draft.files,
+            audioTranscripts: group.draft.audioTranscripts,
+            likes: 0,
+            comments: [],
+            createdAt: group.draft.createdAt,
+            tags: ['微信'],
+        };
+    }
+
     loadAllPosts(): RenderedPost[] {
         const order = this.plugin.data.settings.sortOrder;
         const posts: RenderedPost[] = [];
@@ -646,6 +678,13 @@ export class TimelineView extends ItemView {
             const d = new Date(e.date + 'T00:00:00');
             if (isNaN(d.getTime())) continue;
             posts.push({ entry: e, date: d, ageStr: this.relativeDateLabel(d), ageYear: d.getFullYear(), ageMonth: d.getMonth() + 1 });
+        }
+        if (this.viewMode === 'timeline') {
+            for (const group of this.plugin.wechat.candidates()) {
+                const d = new Date(group.draft.date + 'T00:00:00');
+                if (isNaN(d.getTime())) continue;
+                posts.push({ entry: this.candidateEntry(group), date: d, ageStr: this.relativeDateLabel(d), ageYear: d.getFullYear(), ageMonth: d.getMonth() + 1, candidate: group });
+            }
         }
         posts.sort((a, b) => {
             const timeDiff = b.date.getTime() - a.date.getTime();
@@ -1170,7 +1209,7 @@ export class TimelineView extends ItemView {
 
                     for (const post of month.posts) {
                         const el = container.insertBefore(document.createElement('div'), sentinel);
-                        el.className = 'timeline-post';
+                        el.className = post.candidate ? 'timeline-post is-candidate' : 'timeline-post';
                         el.setAttribute('data-entry-id', post.entry.id);
                         el.setAttribute('data-date', this.dateKey(post.date));
                         el.toggleClass('is-selected', this.selectedEntryIds.has(post.entry.id));
@@ -1181,7 +1220,7 @@ export class TimelineView extends ItemView {
                         el.createDiv('timeline-post-dot');
 
                         const card = el.createDiv('timeline-post-content');
-                        if (this.selectionMode) {
+                        if (this.selectionMode && !post.candidate) {
                             const select = card.createEl('button', {
                                 cls: 'timeline-post-select',
                                 attr: { title: '选择这条记录', 'aria-label': '选择这条记录' }
@@ -1203,6 +1242,7 @@ export class TimelineView extends ItemView {
                         const header = card.createDiv('timeline-post-header');
                         header.createDiv('timeline-post-age').setText(post.ageStr);
                         header.createDiv('timeline-post-date').setText(`· ${this.fmtDate(post.date)}`);
+                        if (post.candidate) header.createDiv({ cls: 'timeline-post-candidate-badge', text: '来自微信 · 待收' });
 
                         // Body
                         const body = card.createDiv('timeline-post-body');
@@ -1249,7 +1289,8 @@ export class TimelineView extends ItemView {
                             for (const audioName of (post.entry.audios || [])) {
                                 this.renderAudioCard(audioList, this.resolveMediaSrc(audioName), audioName.split('/').pop() || '录音', {
                                     transcript: post.entry.audioTranscripts?.[audioName],
-                                    onTranscribe: () => this.plugin.transcribeAudio(post.entry.id, audioName),
+                                    // Candidates are not saved yet; transcription is offered once kept.
+                                    onTranscribe: post.candidate ? undefined : () => this.plugin.transcribeAudio(post.entry.id, audioName),
                                 });
                             }
                         }
@@ -1262,7 +1303,8 @@ export class TimelineView extends ItemView {
                         }
 
                         // Action bar
-                        this.renderActionBar(card, post);
+                        if (post.candidate) this.renderCandidateBar(card, post.candidate);
+                        else this.renderActionBar(card, post);
                     }
                 }
             }
@@ -1405,6 +1447,27 @@ export class TimelineView extends ItemView {
 
     // ---------- Action Bar (❤️ Like / 💬 Comment / ✏️ Edit / 🗑�?Delete) ----------
 
+    /** Keep / ignore for a WeChat candidate shown in the timeline. */
+    renderCandidateBar(card: HTMLElement, group: WechatGroup) {
+        const bar = card.createDiv('post-action-bar timeline-candidate-bar');
+        bar.createDiv({ cls: 'timeline-candidate-hint', text: '收下后成为拾光；忽略不会删除微信里的内容' });
+        const actions = bar.createDiv('post-actions-right');
+        const skip = actions.createEl('button', { cls: 'timeline-candidate-skip', text: '忽略' });
+        const keep = actions.createEl('button', { cls: 'timeline-candidate-keep mod-cta', text: '收下' });
+        keep.onclick = async (event) => {
+            event.stopPropagation();
+            keep.disabled = skip.disabled = true;
+            const id = await this.plugin.wechat.keep([group]);
+            if (id) this.plugin.wechat.notifyKept([id], '已存为拾光');
+        };
+        skip.onclick = async (event) => {
+            event.stopPropagation();
+            keep.disabled = skip.disabled = true;
+            await this.plugin.wechat.dismiss([group]);
+            this.plugin.wechat.notifyDismissed([group]);
+        };
+    }
+
     renderActionBar(card: HTMLElement, post: RenderedPost) {
         const bar = card.createDiv('post-action-bar');
 
@@ -1518,6 +1581,7 @@ export class TimelineView extends ItemView {
         // Search Bar in Sidebar
         this.renderSearchBar(sidebarEl);
         this.renderInboxCaptureArea(sidebarEl);
+        this.renderWechatSection(sidebarEl);
         // Divider
         sidebarEl.createDiv('sidebar-divider');
 
@@ -1866,6 +1930,96 @@ export class TimelineView extends ItemView {
         });
     }
 
+    /** 「来自微信」: every WeChat group not kept or ignored yet, with multi-select to merge. */
+    renderWechatSection(parent: HTMLElement) {
+        const bridge = this.plugin.wechat;
+        if (!bridge.available()) return;
+        const groups = bridge.pending().slice(0, 40);
+        const remind = new Set(bridge.candidates().map(g => g.key));
+        this.wechatSelected = new Set(Array.from(this.wechatSelected).filter(key => groups.some(g => g.key === key)));
+        const expanded = this.wechatExpanded ?? remind.size > 0;
+
+        const section = parent.createDiv('life-wechat-section');
+        const header = section.createDiv('life-wechat-header');
+        const chevron = header.createSpan({ cls: 'life-wechat-chevron', text: expanded ? '▾' : '▸' });
+        header.createSpan({ cls: 'life-wechat-title', text: '来自微信' });
+        if (remind.size) header.createSpan({ cls: 'life-wechat-badge', text: `${remind.size} 待收` });
+        header.onclick = () => {
+            this.wechatExpanded = !expanded;
+            chevron.setText(this.wechatExpanded ? '▾' : '▸');
+            body.toggleClass('is-collapsed', !this.wechatExpanded);
+        };
+        const body = section.createDiv('life-wechat-body');
+        body.toggleClass('is-collapsed', !expanded);
+
+        if (!groups.length) {
+            body.createDiv({ cls: 'life-wechat-empty', text: '微信消息都已处理。' });
+            return;
+        }
+
+        const list = body.createDiv('life-wechat-list');
+        const footer = body.createDiv('life-wechat-footer');
+        const selected = () => groups.filter(g => this.wechatSelected.has(g.key));
+        const keepNow = async (picked: WechatGroup[], merge: boolean) => {
+            if (!picked.length) return;
+            this.wechatSelected.clear();
+            const ids = merge ? [await bridge.keep(picked)].filter((id): id is string => !!id) : await bridge.keepEach(picked);
+            if (ids.length) bridge.notifyKept(ids, merge ? '已合并为一条拾光' : undefined);
+        };
+        const renderFooter = () => {
+            footer.empty();
+            const picked = selected();
+            if (picked.length) {
+                if (picked.length > 1) {
+                    const merge = footer.createEl('button', { cls: 'mod-cta', text: `合并收下 ${picked.length} 组` });
+                    merge.onclick = () => void keepNow(picked, true);
+                }
+                const each = footer.createEl('button', { cls: picked.length > 1 ? '' : 'mod-cta', text: picked.length > 1 ? '分别收下' : '收下' });
+                each.onclick = () => void keepNow(picked, false);
+                const skip = footer.createEl('button', { text: '忽略' });
+                skip.onclick = async () => {
+                    this.wechatSelected.clear();
+                    await bridge.dismiss(picked);
+                    bridge.notifyDismissed(picked);
+                };
+            } else if (remind.size) {
+                const all = footer.createEl('button', { cls: 'mod-cta', text: `全部收下 ${remind.size} 组待收` });
+                all.onclick = () => void keepNow(groups.filter(g => remind.has(g.key)), false);
+            }
+        };
+
+        for (const group of groups) {
+            const row = list.createDiv('life-wechat-row');
+            row.toggleClass('is-selected', this.wechatSelected.has(group.key));
+            const check = row.createEl('input', { cls: 'life-wechat-check', attr: { type: 'checkbox', 'aria-label': '选择这一组' } });
+            check.checked = this.wechatSelected.has(group.key);
+            check.onclick = (event) => event.stopPropagation();
+            check.onchange = () => {
+                if (check.checked) this.wechatSelected.add(group.key);
+                else this.wechatSelected.delete(group.key);
+                row.toggleClass('is-selected', check.checked);
+                renderFooter();
+            };
+            const pic = row.createDiv('life-wechat-thumb');
+            const url = group.cover ? this.plugin.resourceUrl(group.cover) : '';
+            if (url) pic.createEl('img', { attr: { src: url, alt: '', loading: 'lazy' } });
+            else setIcon(pic, group.draft.videos.length ? 'video' : group.draft.audios.length ? 'mic' : group.draft.images.length ? 'image' : group.draft.files.length ? 'paperclip' : 'message-square');
+            const info = row.createDiv('life-wechat-info');
+            info.createDiv({ cls: 'life-wechat-text', text: group.summary });
+            const meta = info.createDiv('life-wechat-meta');
+            const when = new Date(group.firstAt);
+            meta.createSpan({ text: `${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}` });
+            if (group.keys.length > 1) meta.createSpan({ text: `${group.keys.length} 条` });
+            if (remind.has(group.key)) meta.createSpan({ cls: 'life-wechat-chip', text: '待收' });
+            row.onclick = () => {
+                // Candidates are visible in the timeline; others toggle selection.
+                if (remind.has(group.key)) void this.jumpToEntry(`wechat-candidate:${group.key}`);
+                else check.click();
+            };
+        }
+        renderFooter();
+    }
+
     renderSidebarBottomControls(container: HTMLElement) {
         const stats = container.createDiv('sidebar-stats');
     }
@@ -2020,7 +2174,7 @@ export class TimelineView extends ItemView {
         }
 
         // Stats at bottom
-        const filteredPosts = this.getFilteredPosts();
+        const filteredPosts = this.getFilteredPosts().filter(p => !p.candidate);
         const totalMedia = filteredPosts.reduce((s, p) => s + this.mediaCount(p.entry), 0);
         const totalLikes = filteredPosts.reduce((s, p) => s + (p.entry.likes || 0), 0);
         

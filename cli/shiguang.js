@@ -3,7 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const PLUGIN_ID = "Momento";
+// Community installs use the manifest id; older manual installs used the "Momento" folder.
+const PLUGIN_DIRS = ["momento", "Momento"];
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".avif"]);
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".mkv", ".avi", ".webm"]);
 const AUDIO_EXTENSIONS = new Set([".mp3", ".wav", ".m4a", ".aac", ".flac", ".webm", ".ogg"]);
@@ -83,7 +84,7 @@ function resolveDataPath(explicitPath) {
   const cwd = process.cwd();
   const candidates = [
     path.join(cwd, "data.json"),
-    path.join(cwd, ".obsidian", "plugins", PLUGIN_ID, "data.json"),
+    ...PLUGIN_DIRS.map((dir) => path.join(cwd, ".obsidian", "plugins", dir, "data.json")),
   ];
   const existing = candidates.find((candidate) => fs.existsSync(candidate));
   if (existing) return existing;
@@ -125,7 +126,9 @@ function loadData(dataPath) {
   const raw = fs.readFileSync(dataPath, "utf8").trim();
   if (!raw) return defaults;
   const data = JSON.parse(raw);
+  // Keep fields this CLI does not manage (e.g. wechatDismissed) so a save never drops them.
   return {
+    ...data,
     settings: { ...defaults.settings, ...(data.settings || {}), children: [] },
     entries: Array.isArray(data.entries) ? data.entries.map(normalizeEntry) : [],
   };
